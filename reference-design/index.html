@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Sistema de gestión integral para gráficas, imprentas y talleres."
+    >
+
+    <meta
+        name="theme-color"
+        content="#17151d"
+    >
+
+    <title>Panel | Nexo Gráfico</title>
+
+    <!-- =====================================================
+         TIPOGRAFÍAS
+    ====================================================== -->
+
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- =====================================================
+         ICONOS
+    ====================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+    <!-- =====================================================
+         ESTILOS PRINCIPALES
+    ====================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="css/base.css"
+    >
+
+</head>
+
+<body>
+
+<div class="app-shell">
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+    <aside
+        class="sidebar"
+        id="sidebar"
+    >
+
+        <!-- IDENTIDAD -->
+
+        <div class="sidebar-top">
+
+            <a
+                href="index.html"
+                class="brand"
+                aria-label="Ir al inicio"
+            >
+
+                <div
+                    class="brand-symbol"
+                    aria-hidden="true"
+                >
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+
+                <div class="brand-copy">
+
+                    <strong>
+                        Nexo Gráfico
+                    </strong>
+
+                    <small>
+                        Gestión inteligente
+                    </small>
+
+                </div>
+
+            </a>
+
+            <button
+                type="button"
+                class="sidebar-close"
+                id="sidebarClose"
+                aria-label="Cerrar menú"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+
+        <!-- =================================================
+             EMPRESA / ESPACIO DE TRABAJO
+        ================================================== -->
+
+        <div class="workspace-card">
+
+            <div
+                class="workspace-logo"
+                id="workspaceLogo"
+            >
+                NG
+            </div>
+
+            <div class="workspace-info">
+
+                <span>
+                    Espacio de trabajo
+                </span>
+
+                <strong id="empresaSidebar">
+                    Mi gráfica
+                </strong>
+
+            </div>
+
+            <a
+                href="configuracion.html"
+                class="workspace-action"
+                title="Configuración de empresa"
+                aria-label="Configuración de empresa"
+            >
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+
+        </div>
+
+
+        <!-- =================================================
+             NAVEGACIÓN
+        ================================================== -->
+
+        <nav
+            class="main-navigation"
+            aria-label="Navegación principal"
+        >
+
+            <!-- OPERACIÓN -->
+
+            <div class="navigation-section">
+
+                <span class="navigation-label">
+                    Operación
+                </span>
+
+
+                <!-- INICIO -->
+
+                <a
+                    href="index.html"
+                    class="nav-link active"
+                >
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-grid-2"></i>
+                    </span>
+
+                    <span>
+                        Inicio
+                    </span>
+
+                </a>
+
+
+                <!-- PEDIDOS -->
+
+                <a
+                    href="pedidos.html"
+                    class="nav-link"
+                >
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                    </span>
+
+                    <span>
+                        Pedidos
+                    </span>
+
+                    <span
+                        class="nav-counter"
+                        id="contadorPedidosMenu"
+                    >
+                        0
+                    </span>
+
+                </a>
+
+
+                <!-- PRESUPUESTOS -->
+
+                <a
+                    href="presupuestos.html"
+                    class="nav-link"
+                >
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                    </span>
+
+                    <span>
+                        Presupuestos
+                    </span>
+
+                </a>
+
+
+                <!-- PRODUCCIÓN -->
+
+                <a
+                    href="produccion.html"
+                    class="nav-link"
+                >
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-gears"></i>
+                    </span>
+
+                    <span>
+                        Producción
+                    </span>
+
+                </a>
+
+
+                <!-- MATERIALES -->
+
+                <a
+                    href="materiales.html"
+                    class="nav-link"
+                >
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                    </span>
+
+                    <span>
+                        Materiales
+                    </span>
+
+                </a>
+
+            </div>
+
+
+            <!-- ADMINISTRACIÓN -->
+
+            <div class="navigation-section">
+
+                <span class="navigation-label">
+                    Administración
+                </span>
+
+
+                <!-- CAJA -->
+
+                <a
+                    href="caja.html"
+                    class="nav-link"
+                >
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-wallet"></i>
+                    </span>
+
+                    <span>
+                        Caja y pagos
+                    </span>
+
+                </a>
+
+
+                <!-- PROVEEDORES -->
+
+                <a
+                    href="proveedores.html"
+                    class="nav-link"
+                >
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-truck-fast"></i>
+                    </span>
+
+                    <span>
+                        Proveedores
+                    </span>
+
+                </a>
+
+
+                <!-- REPORTES -->
+
+                <a
+                    href="reportes.html"
+                    class="nav-link"
+                >
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-chart-simple"></i>
+                    </span>
+
+                    <span>
+                        Reportes
+                    </span>
+
+                </a>
+
+            </div>
+
+        </nav>
+
+
+        <!-- =================================================
+             PIE DEL SIDEBAR
+        ================================================== -->
+
+        <div class="sidebar-footer">
+
+            <a
+                href="configuracion.html"
+                class="nav-link"
+            >
+
+                <span class="nav-icon">
+                    <i class="fa-solid fa-sliders"></i>
+                </span>
+
+                <span>
+                    Configuración
+                </span>
+
+            </a>
+
+
+            <!-- USUARIO -->
+
+            <div class="user-card">
+
+                <div
+                    class="user-avatar"
+                    id="userAvatar"
+                >
+                    LG
+                </div>
+
+                <div class="user-information">
+
+                    <strong id="userName">
+                        Usuario
+                    </strong>
+
+                    <span id="userEmail">
+                        cuenta@correo.com
+                    </span>
+
+                </div>
+
+                <button
+                    type="button"
+                    class="user-menu-button"
+                    id="logoutButton"
+                    title="Cerrar sesión"
+                    aria-label="Cerrar sesión"
+                >
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </button>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- OVERLAY MOBILE -->
+
+    <div
+        class="sidebar-backdrop"
+        id="sidebarBackdrop"
+    ></div>
+
+
+    <!-- =====================================================
+         CONTENIDO PRINCIPAL
+    ====================================================== -->
+
+    <main class="main-content">
+
+
+        <!-- =================================================
+             TOPBAR
+        ================================================== -->
+
+        <header class="topbar">
+
+            <div class="topbar-left">
+
+                <button
+                    type="button"
+                    class="menu-button"
+                    id="menuButton"
+                    aria-label="Abrir menú"
+                >
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+
+                <div>
+
+                    <span class="eyebrow">
+                        Panel general
+                    </span>
+
+                    <h1>
+                        Buen día,
+                        <span id="nombreBienvenida">
+                            Usuario
+                        </span>
+                    </h1>
+
+                </div>
+
+            </div>
+
+
+            <!-- ACCIONES -->
+
+            <div class="topbar-actions">
+
+                <!-- BUSCADOR -->
+
+                <button
+                    type="button"
+                    class="quick-search"
+                    id="quickSearchButton"
+                    aria-label="Buscar pedido"
+                >
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <span>
+                        Buscar pedido...
+                    </span>
+
+                    <kbd>
+                        Ctrl K
+                    </kbd>
+
+                </button>
+
+
+                <!-- NOTIFICACIONES -->
+
+                <button
+                    type="button"
+                    class="icon-button"
+                    aria-label="Notificaciones"
+                >
+
+                    <i class="fa-regular fa-bell"></i>
+
+                    <span
+                        class="notification-dot"
+                        aria-hidden="true"
+                    ></span>
+
+                </button>
+
+
+                <!-- NUEVO PEDIDO -->
+
+                <a
+                    href="pedidos.html"
+                    class="primary-action"
+                >
+
+                    <i class="fa-solid fa-plus"></i>
+
+                    <span>
+                        Nuevo pedido
+                    </span>
+
+                </a>
+
+            </div>
+
+        </header>
+
+
+        <!-- =================================================
+             CONTENIDO
+        ================================================== -->
+
+        <div class="page-content">
+
+
+            <!-- =================================================
+                 HERO
+            ================================================== -->
+
+            <section class="hero-panel">
+
+                <div class="hero-content">
+
+
+                    <!-- TEXTO -->
+
+                    <div class="hero-text">
+
+                        <span class="hero-tag">
+
+                            <i class="fa-solid fa-sparkles"></i>
+
+                            Resumen de la jornada
+
+                        </span>
+
+
+                        <h2>
+
+                            Todo lo importante de tu gráfica,
+
+                            <span>
+                                en un solo lugar.
+                            </span>
+
+                        </h2>
+
+
+                        <p>
+
+                            Controlá pedidos, producción, cobros
+                            y entregas desde un único sistema de gestión.
+
+                        </p>
+
+
+                        <div class="hero-actions">
+
+                            <a
+                                href="pedidos.html"
+                                class="button button-light"
+                            >
+
+                                Ver pedidos
+
+                                <i class="fa-solid fa-arrow-right"></i>
+
+                            </a>
+
+
+                            <a
+                                href="produccion.html"
+                                class="button button-ghost"
+                            >
+
+                                Revisar producción
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PROGRESO -->
+
+                    <div class="hero-visual">
+
+                        <div class="progress-ring">
+
+                            <svg
+                                viewBox="0 0 120 120"
+                                aria-hidden="true"
+                            >
+
+                                <circle
+                                    class="ring-background"
+                                    cx="60"
+                                    cy="60"
+                                    r="48"
+                                ></circle>
+
+                                <circle
+                                    class="ring-progress"
+                                    id="heroProgressRing"
+                                    cx="60"
+                                    cy="60"
+                                    r="48"
+                                ></circle>
+
+                            </svg>
+
+
+                            <div class="ring-content">
+
+                                <strong id="heroProgressValue">
+                                    0%
+                                </strong>
+
+                                <span>
+                                    completado
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="hero-visual-copy">
+
+                            <strong id="heroCompletedJobs">
+                                0 trabajos listos
+                            </strong>
+
+                            <span id="heroTotalJobs">
+                                de 0 pedidos activos
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 MÉTRICAS
+            ================================================== -->
+
+            <section class="metrics-grid">
+
+
+                <!-- PEDIDOS -->
+
+                <article class="metric-card">
+
+                    <div class="metric-top">
+
+                        <span class="metric-icon icon-purple">
+
+                            <i class="fa-solid fa-clipboard-list"></i>
+
+                        </span>
+
+                        <span class="metric-change positive">
+
+                            <i class="fa-solid fa-arrow-trend-up"></i>
+
+                            Activos
+
+                        </span>
+
+                    </div>
+
+
+                    <span class="metric-label">
+                        Pedidos abiertos
+                    </span>
+
+
+                    <strong
+                        class="metric-value"
+                        id="metricPedidos"
+                    >
+                        0
+                    </strong>
+
+
+                    <p class="metric-description">
+                        Pendientes de completar o entregar.
+                    </p>
+
+                </article>
+
+
+                <!-- PRODUCCIÓN -->
+
+                <article class="metric-card">
+
+                    <div class="metric-top">
+
+                        <span class="metric-icon icon-orange">
+
+                            <i class="fa-solid fa-gears"></i>
+
+                        </span>
+
+                        <span class="metric-change neutral">
+                            En proceso
+                        </span>
+
+                    </div>
+
+
+                    <span class="metric-label">
+                        En producción
+                    </span>
+
+
+                    <strong
+                        class="metric-value"
+                        id="metricProduccion"
+                    >
+                        0
+                    </strong>
+
+
+                    <p class="metric-description">
+                        Trabajos actualmente en taller.
+                    </p>
+
+                </article>
+
+
+                <!-- LISTOS -->
+
+                <article class="metric-card">
+
+                    <div class="metric-top">
+
+                        <span class="metric-icon icon-green">
+
+                            <i class="fa-solid fa-circle-check"></i>
+
+                        </span>
+
+                        <span class="metric-change positive">
+                            Terminados
+                        </span>
+
+                    </div>
+
+
+                    <span class="metric-label">
+                        Listos para entregar
+                    </span>
+
+
+                    <strong
+                        class="metric-value"
+                        id="metricListos"
+                    >
+                        0
+                    </strong>
+
+
+                    <p class="metric-description">
+                        Esperando retiro o despacho.
+                    </p>
+
+                </article>
+
+
+                <!-- SALDO -->
+
+                <article class="metric-card">
+
+                    <div class="metric-top">
+
+                        <span class="metric-icon icon-red">
+
+                            <i class="fa-solid fa-hand-holding-dollar"></i>
+
+                        </span>
+
+                        <span class="metric-change warning">
+                            Por cobrar
+                        </span>
+
+                    </div>
+
+
+                    <span class="metric-label">
+                        Saldo pendiente
+                    </span>
+
+
+                    <strong
+                        class="metric-value metric-money"
+                        id="metricSaldo"
+                    >
+                        $ 0
+                    </strong>
+
+
+                    <p class="metric-description">
+                        Total pendiente de cobro.
+                    </p>
+
+                </article>
+
+            </section>
+
+
+            <!-- =================================================
+                 GRID PRINCIPAL
+            ================================================== -->
+
+            <section class="dashboard-grid">
+
+
+                <!-- =================================================
+                     PEDIDOS RECIENTES
+                ================================================== -->
+
+                <article class="content-card recent-orders-card">
+
+                    <div class="card-header">
+
+                        <div>
+
+                            <span class="card-eyebrow">
+                                Movimiento reciente
+                            </span>
+
+                            <h3>
+                                Últimos pedidos
+                            </h3>
+
+                        </div>
+
+
+                        <a
+                            href="pedidos.html"
+                            class="text-link"
+                        >
+
+                            Ver todos
+
+                            <i class="fa-solid fa-arrow-right"></i>
+
+                        </a>
+
+                    </div>
+
+
+                    <div
+                        class="order-list"
+                        id="recentOrdersList"
+                    ></div>
+
+
+                    <!-- ESTADO VACÍO -->
+
+                    <div
+                        class="empty-dashboard-state"
+                        id="recentOrdersEmpty"
+                    >
+
+                        <div class="empty-icon">
+
+                            <i class="fa-solid fa-clipboard"></i>
+
+                        </div>
+
+
+                        <h4>
+                            No hay pedidos cargados
+                        </h4>
+
+
+                        <p>
+                            Cuando crees pedidos, los vas a ver acá.
+                        </p>
+
+
+                        <a
+                            href="pedidos.html"
+                            class="button button-dark"
+                        >
+                            Crear primer pedido
+                        </a>
+
+                    </div>
+
+                </article>
+
+
+                <!-- =================================================
+                     COLUMNA LATERAL
+                ================================================== -->
+
+                <aside class="side-column">
+
+
+                    <!-- PRODUCCIÓN -->
+
+                    <article class="content-card production-card">
+
+                        <div class="card-header compact">
+
+                            <div>
+
+                                <span class="card-eyebrow">
+                                    Taller
+                                </span>
+
+                                <h3>
+                                    Estado de producción
+                                </h3>
+
+                            </div>
+
+
+                            <span class="live-indicator">
+
+                                <span></span>
+
+                                En vivo
+
+                            </span>
+
+                        </div>
+
+
+                        <div class="production-summary">
+
+
+                            <div class="production-total">
+
+                                <div>
+
+                                    <span>
+                                        Trabajos activos
+                                    </span>
+
+                                    <strong id="productionTotal">
+                                        0
+                                    </strong>
+
+                                </div>
+
+
+                                <i class="fa-solid fa-industry"></i>
+
+                            </div>
+
+
+                            <div class="production-progress-group">
+
+
+                                <!-- DISEÑO -->
+
+                                <div class="progress-item">
+
+                                    <div class="progress-label">
+
+                                        <span>
+                                            Diseño
+                                        </span>
+
+                                        <strong id="designCount">
+                                            0
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div class="progress-track">
+
+                                        <span
+                                            id="designProgress"
+                                            style="width: 0%"
+                                        ></span>
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- PRODUCCIÓN -->
+
+                                <div class="progress-item">
+
+                                    <div class="progress-label">
+
+                                        <span>
+                                            Producción
+                                        </span>
+
+                                        <strong id="productionCount">
+                                            0
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div class="progress-track">
+
+                                        <span
+                                            id="productionProgress"
+                                            style="width: 0%"
+                                        ></span>
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- LISTOS -->
+
+                                <div class="progress-item">
+
+                                    <div class="progress-label">
+
+                                        <span>
+                                            Listos
+                                        </span>
+
+                                        <strong id="readyCount">
+                                            0
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div class="progress-track">
+
+                                        <span
+                                            id="readyProgress"
+                                            style="width: 0%"
+                                        ></span>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </article>
+
+
+                    <!-- =================================================
+                         ACCIONES RÁPIDAS
+                    ================================================== -->
+
+                    <article class="content-card quick-actions-card">
+
+                        <div class="card-header compact">
+
+                            <div>
+
+                                <span class="card-eyebrow">
+                                    Accesos
+                                </span>
+
+                                <h3>
+                                    Acciones rápidas
+                                </h3>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="quick-actions-grid">
+
+
+                            <!-- PEDIDO -->
+
+                            <a
+                                href="pedidos.html"
+                                class="quick-action"
+                            >
+
+                                <span>
+                                    <i class="fa-solid fa-plus"></i>
+                                </span>
+
+                                <strong>
+                                    Pedido
+                                </strong>
+
+                            </a>
+
+
+                            <!-- PRESUPUESTO -->
+
+                            <a
+                                href="presupuestos.html"
+                                class="quick-action"
+                            >
+
+                                <span>
+                                    <i class="fa-solid fa-file-circle-plus"></i>
+                                </span>
+
+                                <strong>
+                                    Presupuesto
+                                </strong>
+
+                            </a>
+
+
+                            <!-- COBRO -->
+
+                            <a
+                                href="caja.html"
+                                class="quick-action"
+                            >
+
+                                <span>
+                                    <i class="fa-solid fa-dollar-sign"></i>
+                                </span>
+
+                                <strong>
+                                    Cobro
+                                </strong>
+
+                            </a>
+
+
+                            <!-- MATERIAL -->
+
+                            <a
+                                href="materiales.html"
+                                class="quick-action"
+                            >
+
+                                <span>
+                                    <i class="fa-solid fa-box-open"></i>
+                                </span>
+
+                                <strong>
+                                    Material
+                                </strong>
+
+                            </a>
+
+                        </div>
+
+                    </article>
+
+                </aside>
+
+            </section>
+
+
+            <!-- =================================================
+                 PRÓXIMAS ENTREGAS
+            ================================================== -->
+
+            <section class="content-card schedule-card">
+
+                <div class="card-header">
+
+                    <div>
+
+                        <span class="card-eyebrow">
+                            Organización
+                        </span>
+
+                        <h3>
+                            Próximas entregas
+                        </h3>
+
+                    </div>
+
+
+                    <div class="date-chip">
+
+                        <i class="fa-regular fa-calendar"></i>
+
+                        <span id="currentDateLabel">
+                            Hoy
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="delivery-timeline"
+                    id="deliveryTimeline"
+                ></div>
+
+
+                <!-- VACÍO -->
+
+                <div
+                    class="empty-dashboard-state compact-empty"
+                    id="deliveryTimelineEmpty"
+                >
+
+                    <div class="empty-icon">
+
+                        <i class="fa-regular fa-calendar-check"></i>
+
+                    </div>
+
+
+                    <div>
+
+                        <h4>
+                            No hay entregas próximas
+                        </h4>
+
+                        <p>
+                            Las fechas de tus pedidos aparecerán en esta agenda.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<!-- =========================================================
+     BUSCADOR GLOBAL
+========================================================== -->
+
+<div
+    class="search-modal"
+    id="searchModal"
+    aria-hidden="true"
+>
+
+    <div class="search-dialog">
+
+        <div class="search-field">
+
+            <i class="fa-solid fa-magnifying-glass"></i>
+
+            <input
+                type="search"
+                id="globalSearchInput"
+                placeholder="Buscar por número, cliente o teléfono..."
+                autocomplete="off"
+            >
+
+            <button
+                type="button"
+                id="closeSearchButton"
+                aria-label="Cerrar búsqueda"
+            >
+                ESC
+            </button>
+
+        </div>
+
+
+        <div
+            class="search-results"
+            id="searchResults"
+        ></div>
+
+
+        <div
+            class="search-empty"
+            id="searchEmpty"
+        >
+            Escribí para buscar pedidos.
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     TOASTS
+========================================================== -->
+
+<div
+    class="toast-container"
+    id="toastContainer"
+    aria-live="polite"
+    aria-atomic="true"
+></div>
+
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================== -->
+
+<script src="js/storage.js"></script>
+
+<script src="js/auth.js"></script>
+
+<script src="js/app.js"></script>
+
+
+</body>
+</html>

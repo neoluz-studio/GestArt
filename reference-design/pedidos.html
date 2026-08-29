@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Gestión de pedidos para Nexo Gráfico."
+    >
+
+    <title>Pedidos | Nexo Gráfico</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/pedidos.css">
+</head>
+
+<body>
+
+<div class="app-shell">
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+    <aside class="sidebar" id="sidebar">
+
+        <div class="sidebar-top">
+
+            <a href="index.html" class="brand">
+
+                <div class="brand-symbol">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+
+                <div class="brand-copy">
+                    <strong>Nexo Gráfico</strong>
+                    <small>Gestión inteligente</small>
+                </div>
+
+            </a>
+
+            <button
+                type="button"
+                class="sidebar-close"
+                id="sidebarClose"
+                aria-label="Cerrar menú"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+
+        <div class="workspace-card">
+
+            <div class="workspace-logo">
+                NG
+            </div>
+
+            <div class="workspace-info">
+                <span>Espacio de trabajo</span>
+
+                <strong id="empresaSidebar">
+                    Mi gráfica
+                </strong>
+            </div>
+
+            <button
+                type="button"
+                class="workspace-action"
+                onclick="window.location.href='configuracion.html'"
+                title="Configuración"
+            >
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+
+        </div>
+
+
+        <nav class="main-navigation">
+
+            <div class="navigation-section">
+
+                <span class="navigation-label">
+                    Operación
+                </span>
+
+                <a href="index.html" class="nav-link">
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-grid-2"></i>
+                    </span>
+
+                    <span>Inicio</span>
+
+                </a>
+
+
+                <a
+                    href="pedidos.html"
+                    class="nav-link active"
+                >
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                    </span>
+
+                    <span>Pedidos</span>
+
+                    <span
+                        class="nav-counter"
+                        id="contadorPedidosMenu"
+                    >
+                        0
+                    </span>
+
+                </a>
+
+
+                <a href="presupuestos.html" class="nav-link">
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                    </span>
+
+                    <span>Presupuestos</span>
+
+                </a>
+
+
+                <a href="ventas.html" class="nav-link">
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                    </span>
+
+                    <span>Ventas</span>
+
+                </a>
+
+
+                <a href="produccion.html" class="nav-link">
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-gears"></i>
+                    </span>
+
+                    <span>Producción</span>
+
+                </a>
+
+
+                <a href="productos.html" class="nav-link">
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </span>
+
+                    <span>Materiales</span>
+
+                </a>
+
+            </div>
+
+
+            <div class="navigation-section">
+
+                <span class="navigation-label">
+                    Administración
+                </span>
+
+
+                <a href="caja.html" class="nav-link">
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-wallet"></i>
+                    </span>
+
+                    <span>Caja y pagos</span>
+
+                </a>
+
+
+                <a href="proveedores.html" class="nav-link">
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-truck-fast"></i>
+                    </span>
+
+                    <span>Proveedores</span>
+
+                </a>
+
+
+                <a href="historial.html" class="nav-link">
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-chart-simple"></i>
+                    </span>
+
+                    <span>Reportes</span>
+
+                </a>
+
+            </div>
+
+        </nav>
+
+
+        <div class="sidebar-footer">
+
+            <a href="configuracion.html" class="nav-link">
+
+                <span class="nav-icon">
+                    <i class="fa-solid fa-sliders"></i>
+                </span>
+
+                <span>Configuración</span>
+
+            </a>
+
+
+            <div class="user-card">
+
+                <div class="user-avatar" id="userAvatar">
+                    LG
+                </div>
+
+                <div class="user-information">
+
+                    <strong id="userName">
+                        Usuario
+                    </strong>
+
+                    <span id="userEmail">
+                        cuenta@correo.com
+                    </span>
+
+                </div>
+
+                <button
+                    type="button"
+                    class="user-menu-button"
+                    id="logoutButton"
+                    title="Cerrar sesión"
+                >
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </button>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <div
+        class="sidebar-backdrop"
+        id="sidebarBackdrop"
+    ></div>
+
+
+    <!-- =====================================================
+         CONTENIDO
+    ====================================================== -->
+
+    <main class="main-content">
+
+        <header class="topbar">
+
+            <div class="topbar-left">
+
+                <button
+                    type="button"
+                    class="menu-button"
+                    id="menuButton"
+                    aria-label="Abrir menú"
+                >
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+
+                <div>
+
+                    <span class="eyebrow">
+                        Gestión comercial
+                    </span>
+
+                    <h1>
+                        Pedidos
+                        <span>de la gráfica</span>
+                    </h1>
+
+                </div>
+
+            </div>
+
+
+            <div class="topbar-actions">
+
+                <button
+                    type="button"
+                    class="quick-search"
+                    id="quickSearchButton"
+                >
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <span>
+                        Buscar pedido...
+                    </span>
+
+                    <kbd>Ctrl K</kbd>
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="icon-button"
+                    aria-label="Notificaciones"
+                >
+                    <i class="fa-regular fa-bell"></i>
+
+                    <span class="notification-dot"></span>
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="primary-action"
+                    id="newOrderButton"
+                >
+                    <i class="fa-solid fa-plus"></i>
+
+                    <span>
+                        Nuevo pedido
+                    </span>
+
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <div class="page-content pedidos-page">
+
+            <!-- =================================================
+                 CABECERA
+            ================================================== -->
+
+            <section class="orders-hero">
+
+                <div class="orders-hero-copy">
+
+                    <span class="hero-mini-tag">
+                        <i class="fa-solid fa-layer-group"></i>
+                        Administración de pedidos
+                    </span>
+
+                    <h2>
+                        Tené cada trabajo
+                        <span>bajo control.</span>
+                    </h2>
+
+                    <p>
+                        Registrá clientes, trabajos, importes, estados
+                        y fechas de entrega desde un solo lugar.
+                    </p>
+
+                </div>
+
+
+                <div class="orders-hero-action">
+
+                    <button
+                        type="button"
+                        class="hero-new-order"
+                        id="heroNewOrderButton"
+                    >
+                        <i class="fa-solid fa-plus"></i>
+                        Crear pedido
+                    </button>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 MÉTRICAS
+            ================================================== -->
+
+            <section class="orders-metrics">
+
+                <article class="order-stat">
+
+                    <div class="order-stat-icon purple">
+                        <i class="fa-solid fa-clipboard-list"></i>
+                    </div>
+
+                    <div>
+
+                        <span>
+                            Total pedidos
+                        </span>
+
+                        <strong id="totalOrders">
+                            0
+                        </strong>
+
+                    </div>
+
+                </article>
+
+
+                <article class="order-stat">
+
+                    <div class="order-stat-icon orange">
+                        <i class="fa-solid fa-gears"></i>
+                    </div>
+
+                    <div>
+
+                        <span>
+                            En proceso
+                        </span>
+
+                        <strong id="processOrders">
+                            0
+                        </strong>
+
+                    </div>
+
+                </article>
+
+
+                <article class="order-stat">
+
+                    <div class="order-stat-icon green">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+
+                    <div>
+
+                        <span>
+                            Listos
+                        </span>
+
+                        <strong id="readyOrders">
+                            0
+                        </strong>
+
+                    </div>
+
+                </article>
+
+
+                <article class="order-stat">
+
+                    <div class="order-stat-icon red">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                    </div>
+
+                    <div>
+
+                        <span>
+                            Saldo pendiente
+                        </span>
+
+                        <strong id="pendingAmount">
+                            $ 0
+                        </strong>
+
+                    </div>
+
+                </article>
+
+            </section>
+
+
+            <!-- =================================================
+                 FILTROS
+            ================================================== -->
+
+            <section class="orders-toolbar">
+
+                <div class="orders-search">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="search"
+                        id="ordersSearch"
+                        placeholder="Buscar por número, cliente, teléfono o trabajo..."
+                        autocomplete="off"
+                    >
+
+                </div>
+
+
+                <div class="orders-filter">
+
+                    <label for="statusFilter">
+                        Estado
+                    </label>
+
+                    <select id="statusFilter">
+
+                        <option value="todos">
+                            Todos los estados
+                        </option>
+
+                        <option value="borrador">
+                            Borrador
+                        </option>
+
+                        <option value="confirmado">
+                            Confirmado
+                        </option>
+
+                        <option value="en-diseno">
+                            En diseño
+                        </option>
+
+                        <option value="en-produccion">
+                            En producción
+                        </option>
+
+                        <option value="listo">
+                            Listo
+                        </option>
+
+                        <option value="entregado">
+                            Entregado
+                        </option>
+
+                        <option value="cancelado">
+                            Cancelado
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="orders-filter">
+
+                    <label for="dateFilter">
+                        Ordenar
+                    </label>
+
+                    <select id="dateFilter">
+
+                        <option value="recent">
+                            Más recientes
+                        </option>
+
+                        <option value="old">
+                            Más antiguos
+                        </option>
+
+                        <option value="delivery">
+                            Próxima entrega
+                        </option>
+
+                        <option value="amount">
+                            Mayor importe
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="secondary-action"
+                    id="clearFiltersButton"
+                >
+                    <i class="fa-solid fa-rotate-left"></i>
+                    Limpiar
+                </button>
+
+            </section>
+
+
+            <!-- =================================================
+                 TABLA
+            ================================================== -->
+
+            <section class="orders-card">
+
+                <div class="orders-card-header">
+
+                    <div>
+
+                        <span class="card-eyebrow">
+                            Registro general
+                        </span>
+
+                        <h3>
+                            Todos los pedidos
+                        </h3>
+
+                    </div>
+
+
+                    <div class="orders-card-actions">
+
+                        <span
+                            class="results-counter"
+                            id="resultsCounter"
+                        >
+                            0 pedidos
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="orders-table-wrapper">
+
+                    <table class="orders-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Pedido
+                                </th>
+
+                                <th>
+                                    Cliente
+                                </th>
+
+                                <th>
+                                    Trabajo
+                                </th>
+
+                                <th>
+                                    Entrega
+                                </th>
+
+                                <th>
+                                    Total
+                                </th>
+
+                                <th>
+                                    Saldo
+                                </th>
+
+                                <th>
+                                    Estado
+                                </th>
+
+                                <th>
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="ordersTableBody"></tbody>
+
+                    </table>
+
+                </div>
+
+
+                <div
+                    class="orders-empty"
+                    id="ordersEmpty"
+                >
+
+                    <div class="orders-empty-icon">
+                        <i class="fa-solid fa-clipboard-list"></i>
+                    </div>
+
+                    <h4>
+                        No hay pedidos para mostrar
+                    </h4>
+
+                    <p>
+                        Creá tu primer pedido para comenzar a gestionar
+                        los trabajos de la gráfica.
+                    </p>
+
+                    <button
+                        type="button"
+                        class="button button-dark"
+                        id="emptyNewOrderButton"
+                    >
+                        <i class="fa-solid fa-plus"></i>
+                        Crear pedido
+                    </button>
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<!-- =========================================================
+     MODAL PEDIDO
+========================================================== -->
+
+<div
+    class="order-modal"
+    id="orderModal"
+    aria-hidden="true"
+>
+
+    <div
+        class="order-modal-overlay"
+        id="orderModalOverlay"
+    ></div>
+
+
+    <section
+        class="order-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="orderModalTitle"
+    >
+
+        <header class="order-dialog-header">
+
+            <div>
+
+                <span class="card-eyebrow">
+                    Gestión de pedido
+                </span>
+
+                <h2 id="orderModalTitle">
+                    Nuevo pedido
+                </h2>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="modal-close"
+                id="closeOrderModal"
+                aria-label="Cerrar"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </header>
+
+
+        <form id="orderForm" novalidate>
+
+            <input
+                type="hidden"
+                id="orderId"
+            >
+
+
+            <!-- CLIENTE -->
+
+            <div class="form-section">
+
+                <div class="form-section-title">
+
+                    <span class="form-section-number">
+                        01
+                    </span>
+
+                    <div>
+
+                        <strong>
+                            Datos del cliente
+                        </strong>
+
+                        <small>
+                            Información de contacto
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-grid">
+
+                    <div class="form-field">
+
+                        <label for="clientName">
+                            Cliente *
+                        </label>
+
+                        <input
+                            type="text"
+                            id="clientName"
+                            placeholder="Nombre y apellido"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <label for="clientPhone">
+                            Teléfono
+                        </label>
+
+                        <input
+                            type="tel"
+                            id="clientPhone"
+                            placeholder="Ej. 2657 123456"
+                        >
+
+                    </div>
+
+
+                    <div class="form-field form-field-full">
+
+                        <label for="clientEmail">
+                            Email
+                        </label>
+
+                        <input
+                            type="email"
+                            id="clientEmail"
+                            placeholder="cliente@correo.com"
+                        >
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- TRABAJO -->
+
+            <div class="form-section">
+
+                <div class="form-section-title">
+
+                    <span class="form-section-number">
+                        02
+                    </span>
+
+                    <div>
+
+                        <strong>
+                            Datos del trabajo
+                        </strong>
+
+                        <small>
+                            Qué necesita realizar la gráfica
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-grid">
+
+                    <div class="form-field">
+
+                        <label for="jobName">
+                            Trabajo *
+                        </label>
+
+                        <input
+                            type="text"
+                            id="jobName"
+                            placeholder="Ej. 500 tarjetas personales"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <label for="jobType">
+                            Tipo de trabajo
+                        </label>
+
+                        <select id="jobType">
+
+                            <option value="">
+                                Seleccionar
+                            </option>
+
+                            <option value="Impresión">
+                                Impresión
+                            </option>
+
+                            <option value="Cartelería">
+                                Cartelería
+                            </option>
+
+                            <option value="Vinilo">
+                                Vinilo
+                            </option>
+
+                            <option value="Diseño">
+                                Diseño
+                            </option>
+
+                            <option value="Neón">
+                                Neón
+                            </option>
+
+                            <option value="Sublimación">
+                                Sublimación
+                            </option>
+
+                            <option value="Otro">
+                                Otro
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <label for="quantity">
+                            Cantidad
+                        </label>
+
+                        <input
+                            type="number"
+                            id="quantity"
+                            min="1"
+                            value="1"
+                        >
+
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <label for="deliveryDate">
+                            Fecha de entrega
+                        </label>
+
+                        <input
+                            type="date"
+                            id="deliveryDate"
+                        >
+
+                    </div>
+
+
+                    <div class="form-field form-field-full">
+
+                        <label for="description">
+                            Descripción / especificaciones
+                        </label>
+
+                        <textarea
+                            id="description"
+                            rows="3"
+                            placeholder="Medidas, material, colores, terminación, detalles..."
+                        ></textarea>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- FINANZAS -->
+
+            <div class="form-section">
+
+                <div class="form-section-title">
+
+                    <span class="form-section-number">
+                        03
+                    </span>
+
+                    <div>
+
+                        <strong>
+                            Importe y pago
+                        </strong>
+
+                        <small>
+                            Control económico del pedido
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-grid">
+
+                    <div class="form-field">
+
+                        <label for="totalAmount">
+                            Total *
+                        </label>
+
+                        <div class="money-input">
+
+                            <span>$</span>
+
+                            <input
+                                type="number"
+                                id="totalAmount"
+                                min="0"
+                                step="0.01"
+                                placeholder="0"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <label for="paidAmount">
+                            Seña / pagado
+                        </label>
+
+                        <div class="money-input">
+
+                            <span>$</span>
+
+                            <input
+                                type="number"
+                                id="paidAmount"
+                                min="0"
+                                step="0.01"
+                                placeholder="0"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <label for="paymentMethod">
+                            Forma de pago
+                        </label>
+
+                        <select id="paymentMethod">
+
+                            <option value="">
+                                Seleccionar
+                            </option>
+
+                            <option value="Efectivo">
+                                Efectivo
+                            </option>
+
+                            <option value="Transferencia">
+                                Transferencia
+                            </option>
+
+                            <option value="Mercado Pago">
+                                Mercado Pago
+                            </option>
+
+                            <option value="Tarjeta">
+                                Tarjeta
+                            </option>
+
+                            <option value="Otro">
+                                Otro
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <label>
+                            Saldo pendiente
+                        </label>
+
+                        <div
+                            class="balance-preview"
+                            id="balancePreview"
+                        >
+                            $ 0
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ESTADO -->
+
+            <div class="form-section">
+
+                <div class="form-section-title">
+
+                    <span class="form-section-number">
+                        04
+                    </span>
+
+                    <div>
+
+                        <strong>
+                            Estado del pedido
+                        </strong>
+
+                        <small>
+                            Seguimiento del trabajo
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-grid">
+
+                    <div class="form-field">
+
+                        <label for="orderStatus">
+                            Estado
+                        </label>
+
+                        <select id="orderStatus">
+
+                            <option value="borrador">
+                                Borrador
+                            </option>
+
+                            <option value="confirmado">
+                                Confirmado
+                            </option>
+
+                            <option value="en-diseno">
+                                En diseño
+                            </option>
+
+                            <option value="en-produccion">
+                                En producción
+                            </option>
+
+                            <option value="listo">
+                                Listo
+                            </option>
+
+                            <option value="entregado">
+                                Entregado
+                            </option>
+
+                            <option value="cancelado">
+                                Cancelado
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-field form-field-full">
+
+                        <label for="orderNotes">
+                            Observaciones internas
+                        </label>
+
+                        <textarea
+                            id="orderNotes"
+                            rows="3"
+                            placeholder="Notas para producción, entrega o administración..."
+                        ></textarea>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <footer class="order-dialog-footer">
+
+                <button
+                    type="button"
+                    class="modal-secondary-button"
+                    id="cancelOrderButton"
+                >
+                    Cancelar
+                </button>
+
+
+                <button
+                    type="submit"
+                    class="modal-primary-button"
+                >
+                    <i class="fa-solid fa-check"></i>
+
+                    <span id="saveOrderText">
+                        Guardar pedido
+                    </span>
+
+                </button>
+
+            </footer>
+
+        </form>
+
+    </section>
+
+</div>
+
+
+<!-- =========================================================
+     MODAL CONFIRMACIÓN
+========================================================== -->
+
+<div
+    class="confirm-modal"
+    id="confirmModal"
+    aria-hidden="true"
+>
+
+    <div class="confirm-overlay"></div>
+
+    <section class="confirm-dialog">
+
+        <div class="confirm-icon">
+            <i class="fa-solid fa-trash-can"></i>
+        </div>
+
+        <h3>
+            Eliminar pedido
+        </h3>
+
+        <p>
+            Esta acción no se puede deshacer.
+            ¿Querés eliminar este pedido?
+        </p>
+
+        <div class="confirm-actions">
+
+            <button
+                type="button"
+                class="modal-secondary-button"
+                id="cancelDeleteButton"
+            >
+                Cancelar
+            </button>
+
+            <button
+                type="button"
+                class="delete-confirm-button"
+                id="confirmDeleteButton"
+            >
+                Eliminar
+            </button>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+<!-- =========================================================
+     TOAST
+========================================================== -->
+
+<div
+    class="toast-container"
+    id="toastContainer"
+></div>
+
+
+<!-- =========================================================
+     LIBRERÍA PDF
+========================================================== -->
+
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+></script>
+
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"
+></script>
+
+
+<script defer src="js/storage.js"></script>
+<script defer src="js/auth.js"></script>
+<script defer src="js/toast.js"></script>
+
+<script defer src="js/app.js"></script>
+<script defer src="js/pedidos.js"></script>
+
+</body>
+</html>

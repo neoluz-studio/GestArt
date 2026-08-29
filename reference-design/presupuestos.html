@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Gestión de presupuestos para Nexo Gráfico."
+    >
+
+    <title>Presupuestos | Nexo Gráfico</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/presupuestos.css">
+</head>
+
+<body>
+
+<div class="app-shell">
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+    <aside class="sidebar" id="sidebar">
+
+        <div class="sidebar-top">
+
+            <a href="index.html" class="brand">
+
+                <div class="brand-symbol">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+
+                <div class="brand-copy">
+                    <strong>Nexo Gráfico</strong>
+                    <small>Gestión inteligente</small>
+                </div>
+
+            </a>
+
+            <button
+                type="button"
+                class="sidebar-close"
+                id="sidebarClose"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+        <div class="workspace-card">
+
+            <div class="workspace-logo">
+                NG
+            </div>
+
+            <div class="workspace-info">
+                <span>Espacio de trabajo</span>
+                <strong id="empresaSidebar">Mi gráfica</strong>
+            </div>
+
+            <button
+                type="button"
+                class="workspace-action"
+                onclick="window.location.href='configuracion.html'"
+            >
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+
+        </div>
+
+        <nav class="main-navigation">
+
+            <div class="navigation-section">
+
+                <span class="navigation-label">
+                    Operación
+                </span>
+
+                <a href="index.html" class="nav-link">
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-grid-2"></i>
+                    </span>
+
+                    <span>Inicio</span>
+
+                </a>
+
+                <a href="pedidos.html" class="nav-link">
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                    </span>
+
+                    <span>Pedidos</span>
+
+                    <span class="nav-counter">
+                        0
+                    </span>
+
+                </a>
+
+                <a href="presupuestos.html" class="nav-link active">
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                    </span>
+
+                    <span>Presupuestos</span>
+
+                </a>
+
+                <a href="ventas.html" class="nav-link">
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                    </span>
+
+                    <span>Ventas</span>
+
+                </a>
+
+                <a href="produccion.html" class="nav-link">
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-gears"></i>
+                    </span>
+
+                    <span>Producción</span>
+
+                </a>
+
+                <a href="productos.html" class="nav-link">
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </span>
+
+                    <span>Materiales</span>
+
+                </a>
+
+            </div>
+
+            <div class="navigation-section">
+
+                <span class="navigation-label">
+                    Administración
+                </span>
+
+                <a href="caja.html" class="nav-link">
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-wallet"></i>
+                    </span>
+
+                    <span>Caja y pagos</span>
+
+                </a>
+
+                <a href="proveedores.html" class="nav-link">
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-truck-fast"></i>
+                    </span>
+
+                    <span>Proveedores</span>
+
+                </a>
+
+                <a href="historial.html" class="nav-link">
+
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-chart-simple"></i>
+                    </span>
+
+                    <span>Reportes</span>
+
+                </a>
+
+            </div>
+
+        </nav>
+
+        <div class="sidebar-footer">
+
+            <a href="configuracion.html" class="nav-link">
+
+                <span class="nav-icon">
+                    <i class="fa-solid fa-sliders"></i>
+                </span>
+
+                <span>Configuración</span>
+
+            </a>
+
+            <div class="user-card">
+
+                <div class="user-avatar">
+                    LG
+                </div>
+
+                <div class="user-information">
+
+                    <strong>Usuario</strong>
+
+                    <span>cuenta@correo.com</span>
+
+                </div>
+
+                <button
+                    type="button"
+                    class="user-menu-button"
+                    id="logoutButton"
+                >
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </button>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+    <div
+        class="sidebar-backdrop"
+        id="sidebarBackdrop"
+    ></div>
+
+
+    <!-- =====================================================
+         CONTENIDO
+    ====================================================== -->
+
+    <main class="main-content">
+
+        <header class="topbar">
+
+            <div class="topbar-left">
+
+                <button
+                    type="button"
+                    class="menu-button"
+                    id="menuButton"
+                >
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+
+                <div>
+
+                    <span class="eyebrow">
+                        Administración comercial
+                    </span>
+
+                    <h1>
+                        Presupuestos
+                    </h1>
+
+                </div>
+
+            </div>
+
+            <div class="topbar-actions">
+
+                <button
+                    type="button"
+                    class="quick-search"
+                    id="presupuestoSearchButton"
+                >
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <span>Buscar presupuesto...</span>
+                    <kbd>Ctrl K</kbd>
+                </button>
+
+                <button
+                    type="button"
+                    class="icon-button"
+                    id="notificationButton"
+                    aria-label="Notificaciones"
+                >
+                    <i class="fa-regular fa-bell"></i>
+                    <span class="notification-dot"></span>
+                </button>
+
+                <button
+                    type="button"
+                    class="primary-action"
+                    id="newBudgetButton"
+                >
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Nuevo presupuesto</span>
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <div class="page-content budget-page">
+
+            <!-- =================================================
+                 ENCABEZADO
+            ================================================== -->
+
+            <section class="budget-intro">
+
+                <div>
+
+                    <span class="budget-eyebrow">
+                        Gestión comercial
+                    </span>
+
+                    <h2>
+                        Tus presupuestos,
+                        <span>bajo control.</span>
+                    </h2>
+
+                    <p>
+                        Creá propuestas, compará alternativas,
+                        modificá productos y prepará el presupuesto
+                        perfecto para cada cliente.
+                    </p>
+
+                </div>
+
+                <div class="budget-summary">
+
+                    <div class="summary-item">
+
+                        <span>Presupuestos</span>
+
+                        <strong id="summaryTotal">
+                            0
+                        </strong>
+
+                    </div>
+
+                    <div class="summary-divider"></div>
+
+                    <div class="summary-item">
+
+                        <span>Pendientes</span>
+
+                        <strong id="summaryPending">
+                            0
+                        </strong>
+
+                    </div>
+
+                    <div class="summary-divider"></div>
+
+                    <div class="summary-item">
+
+                        <span>Aprobados</span>
+
+                        <strong id="summaryApproved">
+                            0
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 FILTROS
+            ================================================== -->
+
+            <section class="budget-toolbar">
+
+                <div class="budget-search">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="search"
+                        id="budgetSearch"
+                        placeholder="Buscar por número, cliente o teléfono..."
+                        autocomplete="off"
+                    >
+
+                </div>
+
+                <select id="statusFilter">
+
+                    <option value="todos">
+                        Todos los estados
+                    </option>
+
+                    <option value="borrador">
+                        Borrador
+                    </option>
+
+                    <option value="enviado">
+                        Enviado
+                    </option>
+
+                    <option value="aprobado">
+                        Aprobado
+                    </option>
+
+                    <option value="rechazado">
+                        Rechazado
+                    </option>
+
+                    <option value="vencido">
+                        Vencido
+                    </option>
+
+                </select>
+
+                <select id="sortFilter">
+
+                    <option value="newest">
+                        Más recientes
+                    </option>
+
+                    <option value="oldest">
+                        Más antiguos
+                    </option>
+
+                    <option value="highest">
+                        Mayor importe
+                    </option>
+
+                    <option value="lowest">
+                        Menor importe
+                    </option>
+
+                </select>
+
+            </section>
+
+
+            <!-- =================================================
+                 LISTADO
+            ================================================== -->
+
+            <section class="budget-list-section">
+
+                <div class="section-heading">
+
+                    <div>
+
+                        <span>
+                            Historial
+                        </span>
+
+                        <h3>
+                            Presupuestos creados
+                        </h3>
+
+                    </div>
+
+                    <span
+                        class="results-counter"
+                        id="resultsCounter"
+                    >
+                        0 resultados
+                    </span>
+
+                </div>
+
+                <div
+                    class="budget-list"
+                    id="budgetList"
+                ></div>
+
+                <div
+                    class="budget-empty"
+                    id="budgetEmpty"
+                >
+
+                    <div class="budget-empty-icon">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                    </div>
+
+                    <h3>
+                        Todavía no tenés presupuestos
+                    </h3>
+
+                    <p>
+                        Creá tu primer presupuesto y empezá a
+                        trabajar tus propuestas comerciales.
+                    </p>
+
+                    <button
+                        type="button"
+                        class="button button-dark"
+                        id="emptyNewBudgetButton"
+                    >
+                        <i class="fa-solid fa-plus"></i>
+                        Crear presupuesto
+                    </button>
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<!-- =========================================================
+     MODAL CREAR / EDITAR
+========================================================= -->
+
+<div
+    class="budget-modal"
+    id="budgetModal"
+    aria-hidden="true"
+>
+
+    <div class="budget-modal-overlay"></div>
+
+    <section class="budget-dialog">
+
+        <header class="budget-dialog-header">
+
+            <div>
+
+                <span>
+                    <i class="fa-solid fa-file-invoice"></i>
+                    <span id="modalModeLabel">
+                        Nuevo presupuesto
+                    </span>
+                </span>
+
+                <h2 id="modalTitle">
+                    Crear presupuesto
+                </h2>
+
+            </div>
+
+            <button
+                type="button"
+                class="modal-close"
+                id="closeBudgetModal"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </header>
+
+
+        <div class="budget-dialog-body">
+
+            <!-- CLIENTE -->
+
+            <section class="editor-section">
+
+                <div class="editor-section-heading">
+
+                    <div>
+
+                        <span>
+                            01
+                        </span>
+
+                        <div>
+
+                            <small>
+                                Información
+                            </small>
+
+                            <h3>
+                                Datos del cliente
+                            </h3>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="form-grid client-grid">
+
+                    <label class="form-field">
+
+                        <span>
+                            Cliente *
+                        </span>
+
+                        <input
+                            type="text"
+                            id="clientName"
+                            placeholder="Ej. Juan Pérez"
+                        >
+
+                    </label>
+
+                    <label class="form-field">
+
+                        <span>
+                            Teléfono
+                        </span>
+
+                        <input
+                            type="tel"
+                            id="clientPhone"
+                            placeholder="Ej. 2657 123456"
+                        >
+
+                    </label>
+
+                    <label class="form-field">
+
+                        <span>
+                            Email
+                        </span>
+
+                        <input
+                            type="email"
+                            id="clientEmail"
+                            placeholder="cliente@email.com"
+                        >
+
+                    </label>
+
+                    <label class="form-field">
+
+                        <span>
+                            Empresa
+                        </span>
+
+                        <input
+                            type="text"
+                            id="clientCompany"
+                            placeholder="Nombre comercial"
+                        >
+
+                    </label>
+
+                </div>
+
+            </section>
+
+
+            <!-- DATOS DEL PRESUPUESTO -->
+
+            <section class="editor-section">
+
+                <div class="editor-section-heading">
+
+                    <div>
+
+                        <span>
+                            02
+                        </span>
+
+                        <div>
+
+                            <small>
+                                Configuración
+                            </small>
+
+                            <h3>
+                                Datos del presupuesto
+                            </h3>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="form-grid budget-data-grid">
+
+                    <label class="form-field">
+
+                        <span>
+                            Fecha de emisión
+                        </span>
+
+                        <input
+                            type="date"
+                            id="budgetDate"
+                        >
+
+                    </label>
+
+                    <label class="form-field">
+
+                        <span>
+                            Vencimiento
+                        </span>
+
+                        <input
+                            type="date"
+                            id="budgetDueDate"
+                        >
+
+                    </label>
+
+                    <label class="form-field">
+
+                        <span>
+                            Estado
+                        </span>
+
+                        <select id="budgetStatus">
+
+                            <option value="borrador">
+                                Borrador
+                            </option>
+
+                            <option value="enviado">
+                                Enviado
+                            </option>
+
+                            <option value="aprobado">
+                                Aprobado
+                            </option>
+
+                            <option value="rechazado">
+                                Rechazado
+                            </option>
+
+                            <option value="vencido">
+                                Vencido
+                            </option>
+
+                        </select>
+
+                    </label>
+
+                </div>
+
+            </section>
+
+
+            <!-- ALTERNATIVAS -->
+
+            <section class="editor-section alternatives-section">
+
+                <div class="editor-section-heading">
+
+                    <div>
+
+                        <span>
+                            03
+                        </span>
+
+                        <div>
+
+                            <small>
+                                Propuesta
+                            </small>
+
+                            <h3>
+                                Alternativas del presupuesto
+                            </h3>
+
+                        </div>
+
+                    </div>
+
+                    <span class="section-helper">
+                        Hasta 3 opciones
+                    </span>
+
+                </div>
+
+                <div
+                    class="alternative-tabs"
+                    id="alternativeTabs"
+                ></div>
+
+                <div
+                    class="alternative-editor"
+                    id="alternativeEditor"
+                ></div>
+
+            </section>
+
+
+            <!-- NOTAS -->
+
+            <section class="editor-section">
+
+                <div class="editor-section-heading">
+
+                    <div>
+
+                        <span>
+                            04
+                        </span>
+
+                        <div>
+
+                            <small>
+                                Información adicional
+                            </small>
+
+                            <h3>
+                                Notas y condiciones
+                            </h3>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <label class="form-field">
+
+                    <span>
+                        Notas para el cliente
+                    </span>
+
+                    <textarea
+                        id="budgetNotes"
+                        rows="4"
+                        placeholder="Ej. El presupuesto tiene una validez de 7 días. El trabajo comienza con una seña del 50%..."
+                    ></textarea>
+
+                </label>
+
+            </section>
+
+        </div>
+
+
+        <footer class="budget-dialog-footer">
+
+            <button
+                type="button"
+                class="secondary-button"
+                id="cancelBudgetButton"
+            >
+                Cancelar
+            </button>
+
+            <div class="footer-actions">
+
+                <button
+                    type="button"
+                    class="secondary-button"
+                    id="saveDraftButton"
+                >
+                    <i class="fa-regular fa-floppy-disk"></i>
+                    Guardar borrador
+                </button>
+
+                <button
+                    type="button"
+                    class="primary-button"
+                    id="saveBudgetButton"
+                >
+                    <i class="fa-solid fa-check"></i>
+                    Guardar presupuesto
+                </button>
+
+            </div>
+
+        </footer>
+
+    </section>
+
+</div>
+
+
+<!-- =========================================================
+     MODAL PRODUCTO
+========================================================= -->
+
+<div
+    class="product-modal"
+    id="productModal"
+    aria-hidden="true"
+>
+
+    <div class="product-modal-overlay"></div>
+
+    <section class="product-dialog">
+
+        <header>
+
+            <div>
+
+                <span>
+                    Agregar producto
+                </span>
+
+                <h2>
+                    Nuevo ítem
+                </h2>
+
+            </div>
+
+            <button
+                type="button"
+                class="modal-close"
+                id="closeProductModal"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </header>
+
+        <div class="product-dialog-body">
+
+            <div class="product-mode-switch">
+
+                <button
+                    type="button"
+                    class="product-mode active"
+                    data-mode="catalogo"
+                >
+                    <i class="fa-solid fa-layer-group"></i>
+                    Del catálogo
+                </button>
+
+                <button
+                    type="button"
+                    class="product-mode"
+                    data-mode="personalizado"
+                >
+                    <i class="fa-solid fa-pen"></i>
+                    Personalizado
+                </button>
+
+            </div>
+
+            <div
+                class="catalog-product-area"
+                id="catalogProductArea"
+            >
+
+                <label class="form-field">
+
+                    <span>
+                        Producto
+                    </span>
+
+                    <select id="catalogProduct">
+
+                        <option value="">
+                            Seleccioná un producto
+                        </option>
+
+                        <option value="Cartel en PVC">
+                            Cartel en PVC
+                        </option>
+
+                        <option value="Cartel en acrílico">
+                            Cartel en acrílico
+                        </option>
+
+                        <option value="Neón Flex">
+                            Neón Flex
+                        </option>
+
+                        <option value="Letras corpóreas">
+                            Letras corpóreas
+                        </option>
+
+                        <option value="Diseño gráfico">
+                            Diseño gráfico
+                        </option>
+
+                        <option value="Diseño web">
+                            Diseño web
+                        </option>
+
+                        <option value="Instalación">
+                            Instalación
+                        </option>
+
+                    </select>
+
+                </label>
+
+            </div>
+
+            <div
+                class="custom-product-area"
+                id="customProductArea"
+                hidden
+            >
+
+                <label class="form-field">
+
+                    <span>
+                        Nombre del producto
+                    </span>
+
+                    <input
+                        type="text"
+                        id="customProductName"
+                        placeholder="Ej. Cartel luminoso exterior"
+                    >
+
+                </label>
+
+            </div>
+
+            <div class="form-grid product-values-grid">
+
+                <label class="form-field">
+
+                    <span>
+                        Cantidad
+                    </span>
+
+                    <input
+                        type="number"
+                        id="productQuantity"
+                        min="0.01"
+                        step="0.01"
+                        value="1"
+                    >
+
+                </label>
+
+                <label class="form-field">
+
+                    <span>
+                        Precio unitario
+                    </span>
+
+                    <div class="money-input">
+
+                        <span>
+                            $
+                        </span>
+
+                        <input
+                            type="number"
+                            id="productPrice"
+                            min="0"
+                            step="0.01"
+                            value="0"
+                        >
+
+                    </div>
+
+                </label>
+
+            </div>
+
+        </div>
+
+        <footer>
+
+            <button
+                type="button"
+                class="secondary-button"
+                id="cancelProductButton"
+            >
+                Cancelar
+            </button>
+
+            <button
+                type="button"
+                class="primary-button"
+                id="confirmProductButton"
+            >
+                <i class="fa-solid fa-plus"></i>
+                Agregar producto
+            </button>
+
+        </footer>
+
+    </section>
+
+</div>
+
+
+<!-- =========================================================
+     VISTA PREVIA
+========================================================= -->
+
+<div
+    class="preview-modal"
+    id="previewModal"
+    aria-hidden="true"
+>
+
+    <div class="preview-overlay"></div>
+
+    <section class="preview-dialog">
+
+        <header class="preview-toolbar">
+
+            <div>
+
+                <span>
+                    Vista previa
+                </span>
+
+                <strong id="previewNumber">
+                    PRES-0001
+                </strong>
+
+            </div>
+
+            <div class="preview-toolbar-actions">
+
+                <button
+                    type="button"
+                    class="secondary-button"
+                    id="printBudgetButton"
+                >
+                    <i class="fa-solid fa-print"></i>
+                    Imprimir / PDF
+                </button>
+
+                <button
+                    type="button"
+                    class="modal-close"
+                    id="closePreviewModal"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+        </header>
+
+        <div
+            class="preview-document"
+            id="previewDocument"
+        ></div>
+
+    </section>
+
+</div>
+
+
+<div
+    class="toast-container"
+    id="toastContainer"
+></div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="js/supabase.js"></script>
+<script defer src="js/storage.js"></script>
+<script defer src="js/auth.js"></script>
+<script defer src="js/toast.js"></script>
+<script defer src="js/roles.js"></script>
+<script defer src="js/app.js"></script>
+<script defer src="js/presupuestos.js"></script>
+
+</body>
+</html>

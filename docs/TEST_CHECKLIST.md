@@ -1,0 +1,40 @@
+# Checklist de aceptación — GestArt 1.0
+
+- [ ] Login real.
+- [ ] Onboarding de empresa.
+- [ ] Cambio entre empresas.
+- [ ] Dashboard con datos reales.
+- [ ] Crear/editar cliente.
+- [ ] Crear pedido.
+- [ ] Pago parcial.
+- [ ] Pago mixto.
+- [ ] Caja recibe pagos.
+- [ ] Registrar ingreso manual.
+- [ ] Registrar egreso manual.
+- [ ] Cierre de caja.
+- [ ] Producción Kanban.
+- [ ] Cambiar responsable de producción.
+- [ ] Crear material.
+- [ ] Entrada de stock.
+- [ ] Salida vinculada a pedido.
+- [ ] Alerta de stock bajo.
+- [ ] Historial registra operaciones.
+- [ ] Crear presupuesto.
+- [ ] Aprobar presupuesto.
+- [ ] Convertir presupuesto a pedido.
+- [ ] Reportes muestran información.
+- [ ] Exportar CSV.
+- [ ] Configurar logo y datos de empresa.
+- [ ] PDF de presupuesto.
+- [ ] Impresión de presupuesto.
+- [ ] PDF de pedido.
+- [ ] PDF de reporte.
+- [ ] Renombrar módulo.
+- [ ] Reordenar navegación.
+- [ ] Desactivar módulo opcional.
+- [ ] Guardar moneda / zona horaria.
+- [ ] Cambiar contraseña.
+- [ ] Probar celular 360/430 px.
+- [ ] Probar tablet 768/1024 px.
+- [ ] `npm run typecheck`.
+- [ ] `npm run build`.
