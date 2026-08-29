@@ -102,7 +102,7 @@ function LoginContent() {
           </div>
           <div>
             <strong>GestArt</strong>
-            <span>Plataforma de gestión multiempresa</span>
+            <span>Gestión inteligente</span>
           </div>
         </div>
 
@@ -116,11 +116,7 @@ function LoginContent() {
           </p>
         </div>
 
-        <small>
-          {demoMode
-            ? "MODO DEMO LOCAL"
-            : "AUTENTICACIÓN SEGURA CON SUPABASE AUTH"}
-        </small>
+        
       </section>
 
       <section className="auth-form-wrap">
