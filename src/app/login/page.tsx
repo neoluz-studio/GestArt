@@ -111,8 +111,7 @@ function LoginContent() {
             Tu negocio, <span>conectado.</span>
           </h1>
           <p>
-            Una plataforma configurable para clientes, presupuestos, pedidos,
-            producción, inventario, caja, reportes, usuarios y administración.
+            Una plataforma integral, visual y configurable para gestionar todo tu negocio desde un solo lugar.
           </p>
         </div>
 
