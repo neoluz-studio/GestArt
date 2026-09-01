@@ -23,6 +23,7 @@ import {
   listCashMovements,
   listPaymentMethods,
   previewCashClosure,
+  deleteCashMovement,
   reverseCashMovement,
   type CashClosure,
   type CashMethodBalance,
@@ -189,6 +190,51 @@ const [orders, setOrders] = useState<any[]>([]);
   const [closing, setClosing] = useState(false);
 
   const [reversal, setReversal] = useState<CashMovement | null>(null);
+  const [deleteMovement, setDeleteMovement] = useState<CashMovement | null>(null);
+const [deleting, setDeleting] = useState(false);
+async function handleDeleteCashMovement() {
+
+  if (!deleteMovement) return;
+
+  if (demoMode) {
+    setDeleteMovement(null);
+    setSuccess("Movimiento eliminado en modo demo.");
+    return;
+  }
+
+  if (!supabaseBrowser || !currentCompany) return;
+
+
+  setDeleting(true);
+  setError("");
+
+  try {
+
+    // acá después conectamos el RPC real
+    await deleteCashMovement(
+  supabaseBrowser,
+  currentCompany.id,
+  deleteMovement.id
+);
+    setDeleteMovement(null);
+    setSuccess("Movimiento eliminado.");
+
+    await Promise.all([
+      loadBase(),
+      loadMovements()
+    ]);
+
+  } catch(error) {
+
+    setError(errorMessage(error));
+
+  } finally {
+
+    setDeleting(false);
+
+  }
+
+}
   const [reversalReason, setReversalReason] = useState("");
   const [reversing, setReversing] = useState(false);
 
@@ -714,25 +760,99 @@ setClients(clientRows);
                       <td className={`money ${movement.movement_type === "expense" ? "cash-negative" : "cash-positive"}`}>
                         {movement.movement_type === "expense" ? "- " : "+ "}{money(movement.amount)}
                       </td>
-                      <td>
-                        {movement.source === "manual" && !movement.reversed_by_id && !movement.reversal_of_id ? (
-                          <button
-                            className="cash-reverse-button"
-                            type="button"
-                            onClick={() => { setReversal(movement); setReversalReason(""); }}
-                          >
-                            Revertir
-                          </button>
-                        ) : movement.reversed_by_id ? (
-                          <span className="cash-reversed-label">Revertido</span>
-                        ) : null}
-                      </td>
+                     <td>
+  {movement.source === "manual" &&
+   !movement.reversed_by_id &&
+   !movement.reversal_of_id ? (
+
+    <>
+      <button
+        className="cash-delete-button"
+        type="button"
+        onClick={() => setDeleteMovement(movement)}
+      >
+        Eliminar
+      </button>
+
+      <button
+        className="cash-reverse-button"
+        type="button"
+        onClick={() => {
+          setReversal(movement);
+          setReversalReason("");
+        }}
+      >
+        Revertir
+      </button>
+    </>
+
+  ) : movement.reversed_by_id ? (
+
+    <span className="cash-reversed-label">
+      Revertido
+    </span>
+
+  ) : null}
+</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
+          {deleteMovement && (
+  <div
+    className="modal-backdrop"
+    role="presentation"
+    onMouseDown={(event)=>{
+      if(event.currentTarget === event.target)
+        setDeleteMovement(null);
+    }}
+  >
+
+    <div className="modal-card">
+
+      <div className="modal-head">
+        <div>
+          <span>CAJA</span>
+          <h3>Eliminar movimiento</h3>
+        </div>
+      </div>
+
+
+      <p>
+        ¿Eliminar el ingreso
+        <strong>
+          {" "}{money(deleteMovement.amount)}
+        </strong>
+        ?
+      </p>
+
+
+      <div className="modal-actions">
+
+        <button
+          className="button modal-secondary"
+          onClick={()=>setDeleteMovement(null)}
+        >
+          Cancelar
+        </button>
+
+
+        <button
+          className="button button-dark"
+          disabled={deleting}
+         onClick={handleDeleteCashMovement}
+        >
+          {deleting ? "Eliminando..." : "Eliminar"}
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+)}
         </section>
 
         <section className="gestart-card cash-closures-card">

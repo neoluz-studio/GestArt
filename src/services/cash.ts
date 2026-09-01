@@ -296,3 +296,19 @@ export async function listCashClosures(
     difference: Number(row.difference ?? 0)
   })) as CashClosure[];
 }
+export async function deleteCashMovement(
+  supabase: SupabaseClient,
+  companyId: string,
+  movementId: string
+): Promise<void> {
+
+  const { error } = await supabase.rpc(
+    "delete_cash_movement_safe",
+    {
+      p_company_id: companyId,
+      p_movement_id: movementId
+    }
+  );
+
+  if (error) throw error;
+}
