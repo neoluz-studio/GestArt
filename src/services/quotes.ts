@@ -288,3 +288,33 @@ export async function convertQuoteToOrder(
     order_number: Number(value.order_number)
   };
 }
+export async function listQuotesByClient(
+  supabase: SupabaseClient,
+  companyId: string,
+  clientId: string
+): Promise<QuoteSummary[]> {
+
+  const { data, error } = await supabase
+    .from("quotes")
+    .select(`
+      id,
+      quote_number,
+      client_id,
+      status,
+      issue_date,
+      total
+    `)
+    .eq("company_id", companyId)
+    .eq("client_id", clientId)
+    .order("issue_date", {
+      ascending: false
+    });
+
+  if (error) throw error;
+
+  return (data ?? []).map((row: any) => ({
+    ...row,
+    quote_number: Number(row.quote_number ?? 0),
+    total: Number(row.total ?? 0)
+  })) as QuoteSummary[];
+}

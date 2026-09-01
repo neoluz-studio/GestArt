@@ -9,6 +9,9 @@ import { cashMovements as demoCashMovements, money as demoMoney } from "@/lib/de
 import { demoMode } from "@/lib/runtime";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { listSuppliers, type SupplierLookup } from "@/services/inventory";
+import { listClients, type ClientSummary } from "@/services/clients";
+import { listQuotesByClient } from "@/services/quotes";
+import { getOrderById } from "@/services/orders";
 import {
   closeCash,
   createManualCashMovement,
@@ -42,6 +45,9 @@ const EMPTY_FORM: ManualCashMovementInput = {
   category: "other",
   amount: 0,
   payment_method_id: "",
+  client_id: null,
+quote_id: null,
+order_id: null,
   supplier_id: null,
   notes: "",
   reference: "",
@@ -87,6 +93,10 @@ function demoRows(): CashMovement[] {
     payment_method_name: item.method,
     order_id: item.concept.includes("#") ? "demo-order" : null,
     order_number: item.concept.includes("#") ? 251 : null,
+    client_id: null,
+client_name: null,
+quote_id: null,
+quote_number: null,
     supplier_id: null,
     supplier_name: item.type === "Egreso" ? "Insumos Print" : null,
     notes: null,
@@ -142,7 +152,13 @@ export function CashClient() {
       : []
   );
   const [suppliers, setSuppliers] = useState<SupplierLookup[]>([]);
-  const [closures, setClosures] = useState<CashClosure[]>([]);
+const [closures, setClosures] = useState<CashClosure[]>([]);
+
+const [clients, setClients] = useState<ClientSummary[]>([]);
+const [clientSearch, setClientSearch] = useState("");
+const [selectedClient, setSelectedClient] = useState<ClientSummary | null>(null);
+const [quotes, setQuotes] = useState<any[]>([]);
+const [orders, setOrders] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(!demoMode);
   const [error, setError] = useState("");
@@ -187,19 +203,137 @@ export function CashClient() {
 
   const dateTime = (value: string) =>
     new Intl.DateTimeFormat(locale, { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
+async function handleClientChange(clientId: string) {
 
+  const client =
+    clients.find(
+      item => item.id === clientId
+    ) || null;
+
+
+  setSelectedClient(client);
+
+
+  setMovementForm(prev => ({
+    ...prev,
+    client_id: clientId || null,
+    quote_id: null,
+    order_id: null
+  }));
+
+
+  setQuotes([]);
+  setOrders([]);
+
+
+  if (
+    !clientId ||
+    !currentCompany ||
+    !supabaseBrowser
+  ) {
+    return;
+  }
+
+
+  try {
+
+    const clientQuotes =
+      await listQuotesByClient(
+        supabaseBrowser,
+        currentCompany.id,
+        clientId
+      );
+
+
+    setQuotes(clientQuotes);
+
+  } catch (error) {
+
+    setError(errorMessage(error));
+
+  }
+
+}
+
+
+
+async function handleQuoteChange(quoteId: string) {
+
+  setMovementForm(prev => ({
+    ...prev,
+    quote_id: quoteId || null,
+    order_id: null
+  }));
+
+  setOrders([]);
+
+
+  if (
+    !quoteId ||
+    !currentCompany ||
+    !supabaseBrowser
+  ) {
+    return;
+  }
+
+
+  try {
+
+    const quote =
+      quotes.find(
+        item => item.id === quoteId
+      );
+
+
+    if (
+      !quote ||
+      !quote.converted_order_id
+    ) {
+      return;
+    }
+
+
+    const order =
+      await getOrderById(
+        supabaseBrowser,
+        currentCompany.id,
+        quote.converted_order_id
+      );
+
+
+    setOrders([
+      order
+    ]);
+
+
+  } catch(error){
+
+    setError(errorMessage(error));
+
+  }
+
+}
   async function loadBase() {
     if (demoMode || !supabaseBrowser || !currentCompany) return;
     setLoading(true);
     setError("");
     try {
-      const [summary, balances, paymentMethods, supplierRows, closureRows] = await Promise.all([
-        getCashOverview(supabaseBrowser, currentCompany.id),
-        getCashMethodBalances(supabaseBrowser, currentCompany.id),
-        listPaymentMethods(supabaseBrowser, currentCompany.id),
-        listSuppliers(supabaseBrowser, currentCompany.id),
-        listCashClosures(supabaseBrowser, currentCompany.id)
-      ]);
+      const [
+  summary,
+  balances,
+  paymentMethods,
+  supplierRows,
+  closureRows,
+  clientRows
+] = await Promise.all([
+  getCashOverview(supabaseBrowser, currentCompany.id),
+  getCashMethodBalances(supabaseBrowser, currentCompany.id),
+  listPaymentMethods(supabaseBrowser, currentCompany.id),
+  listSuppliers(supabaseBrowser, currentCompany.id),
+  listCashClosures(supabaseBrowser, currentCompany.id),
+  listClients(supabaseBrowser, currentCompany.id)
+]);
+setClients(clientRows);
       setOverview(summary);
       setMethodBalances(balances);
       setMethods(paymentMethods);
@@ -474,7 +608,7 @@ export function CashClient() {
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Buscar concepto, proveedor, método o usuario..."
+              placeholder="Buscar concepto, cliente, presupuesto, pedido..."
             />
           </label>
 
@@ -540,13 +674,37 @@ export function CashClient() {
                         </span>
                       </td>
                       <td>
-                        <strong>{movement.concept}</strong>
-                        <small className="cash-row-note">
-                          {movement.order_number ? `Pedido #${String(movement.order_number).padStart(5,"0")}` : ""}
-                          {movement.supplier_name ? `${movement.order_number ? " · " : ""}${movement.supplier_name}` : ""}
-                          {movement.reference ? `${movement.order_number || movement.supplier_name ? " · " : ""}Ref. ${movement.reference}` : ""}
-                        </small>
-                      </td>
+  <strong>{movement.concept}</strong>
+
+  <small className="cash-row-note">
+
+    {movement.client_name && (
+      <>
+        Cliente: {movement.client_name}
+        <br />
+      </>
+    )}
+
+
+    {movement.quote_number && (
+      <>
+        Presupuesto #
+        {String(movement.quote_number).padStart(5,"0")}
+        <br />
+      </>
+    )}
+
+
+    {movement.order_number && (
+      <>
+        Pedido #
+        {String(movement.order_number).padStart(5,"0")}
+      </>
+    )}
+
+  </small>
+
+</td>
                       <td>{categoryLabel(movement.category)}</td>
                       <td>{movement.payment_method_name || "—"}</td>
                       <td><span className="cash-source-pill">{sourceLabel(movement.source)}</span></td>
@@ -642,6 +800,141 @@ export function CashClient() {
               </div>
 
               <div className="client-form-grid">
+                {movementForm.movement_type === "income" && (
+  <label className="form-field full-field">
+    <span>Cliente</span>
+
+    <select
+      value={movementForm.client_id || ""}
+      onChange={(event) => {
+
+  const client =
+    clients.find(
+      item => item.id === event.target.value
+    ) || null;
+
+
+  setSelectedClient(client);
+
+
+  setMovementForm({
+    ...movementForm,
+    client_id: client?.id || null,
+    quote_id: null,
+    order_id: null
+  });
+
+
+  setQuotes([]);
+  setOrders([]);
+
+
+  if (client && currentCompany && supabaseBrowser) {
+
+    void listQuotesByClient(
+      supabaseBrowser,
+      currentCompany.id,
+      client.id
+    )
+    .then((rows) => {
+      setQuotes(rows);
+    })
+    .catch((error) => {
+      setError(errorMessage(error));
+    });
+
+  }
+
+}}
+    >
+
+      <option value="">
+        Sin cliente asociado
+      </option>
+
+      {clients.map(client => (
+        <option
+          value={client.id}
+          key={client.id}
+        >
+          {client.name}
+        </option>
+      ))}
+
+    </select>
+
+  </label>
+  
+)}
+{quotes.length > 0 && (
+  <label className="form-field full-field">
+
+    <span>Presupuesto</span>
+
+    <select
+      value={movementForm.quote_id || ""}
+      onChange={(event) =>
+        handleQuoteChange(event.target.value)
+      }
+    >
+
+      <option value="">
+        Sin presupuesto asociado
+      </option>
+
+
+      {quotes.map((quote) => (
+
+        <option
+          key={quote.id}
+          value={quote.id}
+        >
+          #{quote.quote_number} - {money(quote.total)}
+        </option>
+
+      ))}
+
+    </select>
+
+  </label>
+)}
+{orders.length > 0 && (
+  <label className="form-field full-field">
+
+    <span>Pedido</span>
+
+    <select
+      value={movementForm.order_id || ""}
+      onChange={(event) => {
+
+        setMovementForm({
+          ...movementForm,
+          order_id: event.target.value || null
+        });
+
+      }}
+    >
+
+      <option value="">
+        Sin pedido asociado
+      </option>
+
+
+      {orders.map((order) => (
+
+        <option
+          key={order.id}
+          value={order.id}
+        >
+          #{order.order_number} - {money(order.total)}
+        </option>
+
+      ))}
+
+    </select>
+
+  </label>
+)}
                 <label className="form-field full-field">
                   <span>Concepto *</span>
                   <input

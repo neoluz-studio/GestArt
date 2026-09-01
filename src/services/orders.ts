@@ -322,3 +322,74 @@ export async function cancelOrder(
   });
   if (error) throw error;
 }
+export async function listOrdersByClient(
+  supabase: SupabaseClient,
+  companyId: string,
+  clientId: string
+): Promise<OrderSummary[]> {
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select(`
+      id,
+      order_number,
+      client_id,
+      status,
+      total,
+      order_date
+    `)
+    .eq("company_id", companyId)
+    .eq("client_id", clientId)
+    .order("order_date", {
+      ascending:false
+    });
+
+  if(error) throw error;
+
+  return (data ?? []).map((row:any)=>({
+    ...row,
+    order_number:Number(row.order_number ?? 0),
+    total:Number(row.total ?? 0)
+  })) as OrderSummary[];
+
+}
+export async function getOrderById(
+  supabase: SupabaseClient,
+  companyId: string,
+  orderId: string
+): Promise<OrderSummary> {
+
+  const { data, error } = await supabase.rpc(
+    "get_order_summaries",
+    {
+      p_company_id: companyId,
+      p_search: null,
+      p_status: null,
+      p_priority: null,
+      p_order_id: orderId
+    }
+  );
+
+
+  if (error) throw error;
+
+
+  const row = data?.[0];
+
+  if (!row) {
+    throw new Error("No se encontró el pedido.");
+  }
+
+
+  return {
+    ...row,
+    order_number: Number(row.order_number ?? 0),
+    subtotal: Number(row.subtotal ?? 0),
+    discount: Number(row.discount ?? 0),
+    total: Number(row.total ?? 0),
+    paid: Number(row.paid ?? 0),
+    balance: Number(row.balance ?? 0),
+    item_count: Number(row.item_count ?? 0)
+  } as OrderSummary;
+
+}

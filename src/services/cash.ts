@@ -29,6 +29,11 @@ export type CashMovement = {
   order_id: string | null;
   order_number: number | null;
   supplier_id: string | null;
+  client_id: string | null;
+client_name: string | null;
+
+quote_id: string | null;
+quote_number: number | null;
   supplier_name: string | null;
   notes: string | null;
   reference: string | null;
@@ -61,15 +66,31 @@ export type CashClosure = {
 };
 
 export type ManualCashMovementInput = {
+
   movement_type: "income" | "expense";
+
   concept: string;
+
   category?: string | null;
+
   amount: number;
+
   payment_method_id: string;
+
+  client_id?: string | null;
+
+  quote_id?: string | null;
+
+  order_id?: string | null;
+
   supplier_id?: string | null;
+
   notes?: string | null;
+
   reference?: string | null;
+
   occurred_at?: string | null;
+
 };
 
 export async function getCashOverview(
@@ -131,11 +152,23 @@ export async function listCashMovements(
   if (error) throw error;
 
   return (data ?? []).map((row: Record<string, unknown>) => ({
-    ...row,
-    amount: Number(row.amount ?? 0),
-    order_number: row.order_number == null ? null : Number(row.order_number),
-    source: String(row.source ?? "manual")
-  })) as CashMovement[];
+  ...row,
+
+  amount: Number(row.amount ?? 0),
+
+  order_number:
+    row.order_number == null
+      ? null
+      : Number(row.order_number),
+
+  quote_number:
+    row.quote_number == null
+      ? null
+      : Number(row.quote_number),
+
+  source: String(row.source ?? "manual")
+
+})) as CashMovement[];
 }
 
 export async function listPaymentMethods(
@@ -157,22 +190,46 @@ export async function createManualCashMovement(
   companyId: string,
   input: ManualCashMovementInput
 ): Promise<string> {
-  const { data, error } = await supabase.rpc("record_manual_cash_movement", {
+
+ const { data, error } = await supabase.rpc(
+  "record_manual_cash_movement",
+  {
     p_company_id: companyId,
+
     p_movement_type: input.movement_type,
+
     p_concept: input.concept.trim(),
+
     p_category: input.category?.trim() || null,
+
     p_amount: input.amount,
+
     p_payment_method_id: input.payment_method_id,
+
+
+    p_client_id: input.client_id || null,
+
+    p_quote_id: input.quote_id || null,
+
+    p_order_id: input.order_id || null,
+
+
     p_supplier_id: input.supplier_id || null,
+
     p_notes: input.notes?.trim() || null,
+
     p_reference: input.reference?.trim() || null,
-    p_occurred_at: input.occurred_at ? new Date(input.occurred_at).toISOString() : null
-  });
+
+    p_occurred_at: input.occurred_at
+      ? new Date(input.occurred_at).toISOString()
+      : null
+  }
+);
+
   if (error) throw error;
+
   return data as string;
 }
-
 export async function reverseCashMovement(
   supabase: SupabaseClient,
   companyId: string,

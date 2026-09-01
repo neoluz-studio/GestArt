@@ -6,6 +6,7 @@ import { CompactMetric } from "@/components/Metric";
 import { Icon } from "@/components/Icon";
 import { Topbar } from "@/components/Topbar";
 import { useTenant } from "@/contexts/TenantContext";
+import { useAppState } from "@/contexts/AppStateContext";
 import { clients as demoClients, money as demoMoney, quotes as demoQuotes } from "@/lib/demo-data";
 import { demoMode } from "@/lib/runtime";
 import { supabaseBrowser } from "@/lib/supabase/browser";
@@ -128,8 +129,13 @@ function demoRows(): QuoteSummary[] {
 
 export function QuotesClient() {
   const { currentCompany, settings } = useTenant();
+  const {
+  state,
+  updateState
+} = useAppState();
 
   const [quotes, setQuotes] = useState<QuoteSummary[]>(demoMode ? demoRows() : []);
+  const [clients, setClients] = useState<ClientSummary[]>([]);
   const [overview, setOverview] = useState<QuoteOverview>(
     demoMode
       ? {
@@ -148,17 +154,61 @@ export function QuotesClient() {
         }
   );
 
-  const [clients, setClients] = useState<ClientSummary[]>([]);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [daysFilter, setDaysFilter] = useState("30");
+  const [search, setSearch] = useState(
+  state.filters.quotesSearch || ""
+);
+
+const [statusFilter, setStatusFilter] = useState(
+  state.filters.quotesStatus || ""
+);
+
+const [daysFilter, setDaysFilter] = useState(
+  state.filters.quotesDays || "30"
+);
+useEffect(() => {
+
+  updateState({
+    filters: {
+      quotesSearch: search,
+      quotesStatus: statusFilter,
+      quotesDays: daysFilter
+    }
+  });
+
+}, [
+  search,
+  statusFilter,
+  daysFilter]);
   const [loading, setLoading] = useState(!demoMode);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<QuoteDetail | null>(null);
-  const [form, setForm] = useState<QuoteInput>(EMPTY_QUOTE);
+  const [formOpen, setFormOpen] = useState(
+  state.quoteDraft?.formOpen ?? false
+);
+
+const [editing, setEditing] = useState<QuoteDetail | null>(
+  state.quoteDraft?.editing ?? null
+);
+
+const [form, setForm] = useState<QuoteInput>(
+  state.quoteDraft?.form ?? EMPTY_QUOTE
+);
+useEffect(() => {
+
+  updateState({
+    quoteDraft: {
+      form,
+      formOpen,
+      editing
+    }
+  });
+
+}, [
+  form,
+  formOpen,
+  editing
+]);
   const [saving, setSaving] = useState(false);
 
   const [detail, setDetail] = useState<QuoteDetail | null>(null);

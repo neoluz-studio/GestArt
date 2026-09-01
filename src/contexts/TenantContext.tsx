@@ -208,9 +208,13 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, [user, loadCompanyConfiguration]);
 
-  useEffect(() => {
-    if (!authLoading) void reload();
-  }, [authLoading, reload]);
+ useEffect(() => {
+
+  if (!authLoading) {
+    void reload();
+  }
+
+}, [authLoading, reload]);
 
   const setCurrentCompanyId = useCallback(
     (companyId: string) => {

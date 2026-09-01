@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
@@ -23,43 +24,85 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({
+  children
+}: {
+  children: React.ReactNode;
+}) {
+
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(!demoMode);
 
+  const initialized = useRef(false);
+
+
   const refresh = useCallback(async () => {
+
     if (demoMode || !supabaseBrowser) {
       setSession(null);
       setLoading(false);
       return;
     }
 
-    const { data } = await supabaseBrowser.auth.getSession();
+    const {
+      data
+    } = await supabaseBrowser.auth.getSession();
+
     setSession(data.session);
     setLoading(false);
+
   }, []);
 
+
+
   useEffect(() => {
+
+    if (initialized.current) return;
+
+    initialized.current = true;
+
     void refresh();
 
-    if (demoMode || !supabaseBrowser) return;
+
+    if (demoMode || !supabaseBrowser) {
+      return;
+    }
+
 
     const {
-      data: { subscription }
-    } = supabaseBrowser.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      setLoading(false);
-    });
+      data: {
+        subscription
+      }
+    } = supabaseBrowser.auth.onAuthStateChange(
+      (_event, nextSession) => {
 
-    return () => subscription.unsubscribe();
+        setSession(nextSession);
+        setLoading(false);
+
+      }
+    );
+
+
+    return () => {
+      subscription.unsubscribe();
+    };
+
+
   }, [refresh]);
 
+
+
   const signOut = useCallback(async () => {
+
     if (supabaseBrowser) {
       await supabaseBrowser.auth.signOut();
     }
+
     setSession(null);
+
   }, []);
+
+
 
   const value = useMemo(
     () => ({
@@ -70,14 +113,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signOut,
       refresh
     }),
-    [session, loading, signOut, refresh]
+    [
+      session,
+      loading,
+      signOut,
+      refresh
+    ]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+
 }
 
+
+
 export function useAuth() {
+
   const value = useContext(AuthContext);
-  if (!value) throw new Error("useAuth debe usarse dentro de AuthProvider.");
+
+  if (!value) {
+    throw new Error(
+      "useAuth debe usarse dentro de AuthProvider."
+    );
+  }
+
   return value;
+
 }
