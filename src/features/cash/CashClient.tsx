@@ -10,8 +10,10 @@ import { demoMode } from "@/lib/runtime";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { listSuppliers, type SupplierLookup } from "@/services/inventory";
 import { listClients, type ClientSummary } from "@/services/clients";
-import { listQuotesByClient } from "@/services/quotes";
-import { getOrderById } from "@/services/orders";
+import {
+  getOrderById,
+  listOrdersByClient
+} from "@/services/orders";
 import {
   closeCash,
   createManualCashMovement,
@@ -46,8 +48,8 @@ const EMPTY_FORM: ManualCashMovementInput = {
   amount: 0,
   payment_method_id: "",
   client_id: null,
-quote_id: null,
-order_id: null,
+  quote_id: null,
+  order_id: null,
   supplier_id: null,
   notes: "",
   reference: "",
@@ -237,15 +239,15 @@ async function handleClientChange(clientId: string) {
 
   try {
 
-    const clientQuotes =
-      await listQuotesByClient(
-        supabaseBrowser,
-        currentCompany.id,
-        clientId
-      );
+  const clientOrders =
+  await listOrdersByClient(
+    supabaseBrowser,
+    currentCompany.id,
+    clientId
+  );
 
 
-    setQuotes(clientQuotes);
+setOrders(clientOrders);
 
   } catch (error) {
 
@@ -829,22 +831,21 @@ setClients(clientRows);
   setOrders([]);
 
 
-  if (client && currentCompany && supabaseBrowser) {
+if (client && currentCompany && supabaseBrowser) {
 
-    void listQuotesByClient(
-      supabaseBrowser,
-      currentCompany.id,
-      client.id
-    )
-    .then((rows) => {
-      setQuotes(rows);
-    })
-    .catch((error) => {
-      setError(errorMessage(error));
-    });
+  void listOrdersByClient(
+    supabaseBrowser,
+    currentCompany.id,
+    client.id
+  )
+  .then((rows) => {
+    setOrders(rows);
+  })
+  .catch((error) => {
+    setError(errorMessage(error));
+  });
 
-  }
-
+}
 }}
     >
 
@@ -866,6 +867,7 @@ setClients(clientRows);
   </label>
   
 )}
+{/*
 {quotes.length > 0 && (
   <label className="form-field full-field">
 
@@ -897,7 +899,9 @@ setClients(clientRows);
     </select>
 
   </label>
-)}
+  )}
+  */}
+
 {orders.length > 0 && (
   <label className="form-field full-field">
 
