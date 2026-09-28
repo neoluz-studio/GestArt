@@ -339,11 +339,11 @@ async function downloadBusinessDocument(
       lineWidth: { bottom: 0.1 }
     },
     columnStyles: {
-  0: { cellWidth: 82 },
-  1: { cellWidth: 18, halign: "right" },
-  2: { cellWidth: 30, halign: "right" },
-  3: { cellWidth: 30, halign: "right", fontStyle: "bold" }
-},
+      0: { cellWidth: 89 },
+      1: { cellWidth: 20, halign: "right" },
+      2: { cellWidth: 31, halign: "right" },
+      3: { cellWidth: 31, halign: "right", fontStyle: "bold" }
+    },
     didDrawPage: () => {
       doc.setFontSize(7);
       setTextColor(doc, 145);

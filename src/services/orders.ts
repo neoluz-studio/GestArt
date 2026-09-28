@@ -286,23 +286,37 @@ export async function registerMixedPayment(
   companyId: string,
   orderId: string,
   lines: PaymentLineInput[],
-  notes?: string
+  notes?: string,
+  idempotencyKey?: string
 ): Promise<string> {
   if (!lines.length) throw new Error("Agregá al menos un medio de pago.");
-  if (lines.some((line) => !line.payment_method_id || Number(line.amount) <= 0)) {
+  if (lines.some((line) => !line.payment_method_id || !(Number(line.amount) > 0))) {
     throw new Error("Todos los pagos deben tener medio y monto mayor a cero.");
   }
 
-  const { data, error } = await supabase.rpc("register_mixed_payment_v2", {
+  const baseParams = {
     p_company_id: companyId,
     p_order_id: orderId,
     p_lines: lines.map((line) => ({
       payment_method_id: line.payment_method_id,
-      amount: Number(line.amount),
+      amount: Math.round(Number(line.amount) * 100) / 100,
       reference: line.reference?.trim() || null
     })),
     p_notes: notes?.trim() || null
+  };
+
+  // La clave de idempotencia evita cobrar dos veces si el envío se repite
+  // (doble clic, reintento de red). Requiere la migración 0015.
+  let { data, error } = await supabase.rpc("register_mixed_payment_v2", {
+    ...baseParams,
+    p_idempotency_key: idempotencyKey ?? null
   });
+
+  // Compatibilidad: si la base todavía no tiene la migración 0015 la función
+  // solo acepta 4 parámetros. Reintentamos sin la clave para no bloquear el cobro.
+  if (error && (error.code === "PGRST202" || error.code === "42883")) {
+    ({ data, error } = await supabase.rpc("register_mixed_payment_v2", baseParams));
+  }
 
   if (error) throw error;
   return String(data);

@@ -693,6 +693,7 @@ button { font-family: inherit; }
 .order-detail-metrics span { color:var(--text-muted); font-size:7px; font-weight:800; text-transform:uppercase; }
 .order-detail-metrics strong { margin-top:5px; overflow:hidden; font-family:"Manrope",sans-serif; font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
 .order-status-controls { display:grid; grid-template-columns:1fr 1fr; align-items:end; gap:14px; }
+.order-status-controls > label > span,
 .order-status-controls > div > span { display:block; margin-bottom:7px; color:var(--text-muted); font-size:8px; font-weight:800; text-transform:uppercase; }
 .order-status-controls select { min-height:39px; }
 .drawer-discount { display:flex; justify-content:space-between; gap:18px; padding-top:13px; color:var(--text-soft); font-size:9px; }
@@ -4277,3 +4278,8 @@ body.command-open {
     flex-direction:column;
   }
 }
+
+
+/* El modal de pago se abre encima del panel del pedido (z-index 520).
+   Antes quedaba por debajo (500) y el botón "Registrar pago" parecía no hacer nada. */
+.modal-backdrop.payment-backdrop { z-index: 580; }

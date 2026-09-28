@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState, useRef } from "react";
 import { CompactMetric } from "@/components/Metric";
 import { Icon } from "@/components/Icon";
 import { Topbar } from "@/components/Topbar";
@@ -142,6 +142,9 @@ export function OrdersClient() {
   const [paymentLines, setPaymentLines] = useState<PaymentLineInput[]>([]);
   const [paymentNotes, setPaymentNotes] = useState("");
   const [paymentSaving, setPaymentSaving] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+  const paymentLock = useRef(false);
+  const paymentKey = useRef("");
   const [statusSaving, setStatusSaving] = useState(false);
   const [documentBusy, setDocumentBusy] = useState<"pdf" | "print" | null>(null);
 
@@ -332,6 +335,8 @@ export function OrdersClient() {
                 }
               ]);
               setPaymentNotes("Seña inicial del pedido");
+              setPaymentError("");
+              paymentKey.current = newPaymentKey();
               setPaymentOpen(true);
             } catch (depositErr) {
               setError(errorMessage(depositErr));
@@ -375,16 +380,22 @@ export function OrdersClient() {
     if (!detail || detail.order.balance <= 0) return;
     setPaymentLines([{ payment_method_id: methods[0]?.id ?? "", amount: detail.order.balance, reference: "" }]);
     setPaymentNotes("");
+    setPaymentError("");
+    setError("");
+    paymentKey.current = newPaymentKey();
     setPaymentOpen(true);
   }
 
   async function submitPayment(event: FormEvent) {
     event.preventDefault();
-    if (!detail) return;
-    if (paymentTotal <= 0) return setError("Ingresá un monto mayor a cero.");
-    if (paymentTotal > detail.order.balance + 0.001) return setError("El pago supera el saldo pendiente.");
+    if (!detail || paymentLock.current) return;
+    if (paymentLines.some((line) => !line.payment_method_id)) return setPaymentError("Elegí el método de pago en todas las líneas.");
+    if (paymentTotal <= 0) return setPaymentError("Ingresá un monto mayor a cero.");
+    if (paymentTotal > detail.order.balance + 0.009) return setPaymentError("El pago supera el saldo pendiente.");
 
+    paymentLock.current = true;
     setPaymentSaving(true);
+    setPaymentError("");
     setError("");
     try {
       if (demoMode) {
@@ -392,16 +403,21 @@ export function OrdersClient() {
         setPaymentOpen(false);
       } else {
         if (!supabaseBrowser || !currentCompany) throw new Error("No hay una empresa activa.");
-        await registerMixedPayment(supabaseBrowser, currentCompany.id, detail.order.id, paymentLines, paymentNotes);
-        const refreshed = await loadOrderDetail(supabaseBrowser, currentCompany.id, detail.order.id);
-        setDetail(refreshed);
-        setSuccess("Pago registrado. Caja, saldo e historial fueron actualizados.");
+        await registerMixedPayment(supabaseBrowser, currentCompany.id, detail.order.id, paymentLines, paymentNotes, paymentKey.current);
         setPaymentOpen(false);
-        await load();
+        setSuccess("Pago registrado. Caja, saldo e historial fueron actualizados.");
+        try {
+          setDetail(await loadOrderDetail(supabaseBrowser, currentCompany.id, detail.order.id));
+          await load();
+        } catch (refreshError) {
+          // El pago ya se guardó: solo falló refrescar la pantalla.
+          setError(`El pago se registró, pero no pudimos actualizar la pantalla: ${errorMessage(refreshError)}`);
+        }
       }
     } catch (err) {
-      setError(errorMessage(err));
+      setPaymentError(errorMessage(err));
     } finally {
+      paymentLock.current = false;
       setPaymentSaving(false);
     }
   }
@@ -543,7 +559,7 @@ export function OrdersClient() {
       {formOpen ? <OrderFormModal form={form} setForm={setForm} clients={clients} editing={editing} subtotal={formSubtotal} total={formTotal} money={money} saving={saving} depositAmount={depositAmount} setDepositAmount={setDepositAmount} close={() => { setFormOpen(false); setEditing(null); setDepositAmount(0); }} submit={submitOrder} updateItem={updateItem} addItem={addItem} removeItem={removeItem}/> : null}
       {detailLoading ? <div className="detail-loading">Cargando pedido...</div> : null}
       {detail ? <OrderDrawer detail={detail} money={money} close={() => setDetail(null)} edit={() => { const summary = detail.order; setDetail(null); void openEdit(summary); }} startPayment={startPayment} updateStatus={updateStatus} statusSaving={statusSaving} documentBusy={documentBusy} exportDocument={exportOrder}/> : null}
-      {paymentOpen && detail ? <PaymentModal detail={detail} methods={methods} lines={paymentLines} setLines={setPaymentLines} notes={paymentNotes} setNotes={setPaymentNotes} money={money} total={paymentTotal} saving={paymentSaving} close={() => setPaymentOpen(false)} submit={submitPayment}/> : null}
+      {paymentOpen && detail ? <PaymentModal detail={detail} methods={methods} lines={paymentLines} setLines={setPaymentLines} notes={paymentNotes} setNotes={setPaymentNotes} money={money} total={paymentTotal} saving={paymentSaving} error={paymentError} close={() => setPaymentOpen(false)} submit={submitPayment}/> : null}
     </>
   );
 }
@@ -566,6 +582,11 @@ function OrderFormModal({ form, setForm, clients, editing, subtotal, total, mone
   removeItem: (index: number) => void;
 }) {
   return <div className="modal-backdrop" onMouseDown={close}><form className="modal-card order-form-modal" onMouseDown={(event) => event.stopPropagation()} onSubmit={submit}><div className="modal-head"><div><span>{editing ? "EDITAR PEDIDO" : "NUEVO PEDIDO"}</span><h3>{editing ? `Pedido #${String(editing.order.order_number).padStart(5,"0")}` : "Crear pedido"}</h3></div><button className="modal-close" type="button" onClick={close}>×</button></div><div className="order-form-grid"><div className="field full"><label>Cliente *</label><select value={form.client_id} onChange={(event) => setForm((current) => ({ ...current, client_id: event.target.value }))}><option value="">Seleccionar cliente...</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.name}{client.company_name ? ` · ${client.company_name}` : ""}</option>)}</select></div><div className="field"><label>Fecha</label><input type="date" value={form.order_date} onChange={(event) => setForm((current) => ({ ...current, order_date: event.target.value }))}/></div><div className="field"><label>Fecha de entrega</label><input type="date" value={form.delivery_date ?? ""} onChange={(event) => setForm((current) => ({ ...current, delivery_date: event.target.value }))}/></div><div className="field"><label>Prioridad</label><select value={form.priority} onChange={(event) => setForm((current) => ({ ...current, priority: event.target.value as OrderPriority }))}>{PRIORITY_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></div><div className="field"><label>Estado</label><select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as OrderStatus }))}>{STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></div></div><section className="order-items-editor"><div className="order-items-head"><div><strong>Productos / ítems</strong><span>Un pedido puede contener varios trabajos o servicios.</span></div><button className="button modal-secondary" type="button" onClick={addItem}><Icon name="plus" size={13}/> Agregar ítem</button></div><div className="order-items-list">{form.items.map((item, index) => <div className="order-item-row" key={index}><div className="field item-description"><label>Descripción</label><input value={item.description} onChange={(event) => updateItem(index, { description: event.target.value })} placeholder="Ej: 500 tarjetas personales"/></div><div className="field"><label>Cantidad</label><input type="number" min="0.001" step="0.001" value={item.quantity} onChange={(event) => updateItem(index, { quantity: Number(event.target.value) })}/></div><div className="field"><label>Precio unitario</label><input type="number" min="0" step="0.01" value={item.unit_price} onChange={(event) => updateItem(index, { unit_price: Number(event.target.value) })}/></div><div className="item-total"><span>Total</span><strong>{money(Number(item.quantity || 0) * Number(item.unit_price || 0))}</strong></div><button className="item-remove" type="button" disabled={form.items.length === 1} onClick={() => removeItem(index)}>×</button></div>)}</div></section><div className="order-form-footer"><div className="field order-notes"><label>Observaciones</label><textarea value={form.notes ?? ""} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Detalles internos del pedido..."/></div><div className="order-totals"><div><span>Subtotal</span><strong>{money(subtotal)}</strong></div><label><span>Descuento</span><input type="number" min="0" step="0.01" value={form.discount} onChange={(event) => setForm((current) => ({ ...current, discount: Number(event.target.value) }))}/></label><div className="grand-total"><span>Total</span><strong>{money(total)}</strong></div></div></div>{!editing ? <div className="order-deposit-box"><div className="order-deposit-copy"><Icon name="money" size={16}/><div><strong>Seña o anticipo (opcional)</strong><span>Si el cliente adelanta un pago al confirmar el pedido, cargalo acá y te vamos a abrir el registro de pago automáticamente al guardar.</span></div></div><div className="order-deposit-input"><label><span>Monto</span><input type="number" min="0" max={total} step="0.01" value={depositAmount || ""} onChange={(event) => setDepositAmount(Math.max(0, Math.min(Number(event.target.value) || 0, total)))} placeholder="0"/></label>{total > 0 ? <div className="order-deposit-quick"><button type="button" onClick={() => setDepositAmount(Math.round(total * 0.5 * 100) / 100)}>50%</button><button type="button" onClick={() => setDepositAmount(total)}>100%</button><button type="button" onClick={() => setDepositAmount(0)}>Sin seña</button></div> : null}</div></div> : null}<div className="modal-actions"><button className="button modal-secondary" type="button" onClick={close}>Cancelar</button><button className="button button-dark" type="submit" disabled={saving}>{saving ? "Guardando..." : editing ? "Guardar cambios" : depositAmount > 0 ? "Crear pedido y registrar seña" : "Crear pedido"}</button></div></form></div>;
+}
+
+function newPaymentKey(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  return `pay-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
 function OrderDrawer({ detail, money, close, edit, startPayment, updateStatus, statusSaving, documentBusy, exportDocument }: { detail: OrderDetail; money: (value: number) => string; close: () => void; edit: () => void; startPayment: () => void; updateStatus: (status: OrderStatus) => void; statusSaving: boolean; documentBusy: "pdf" | "print" | null; exportDocument: (action: "pdf" | "print") => Promise<void> }) {
@@ -591,12 +612,12 @@ function OrderDrawer({ detail, money, close, edit, startPayment, updateStatus, s
   return <div className="drawer-backdrop" onMouseDown={close}><aside className="order-drawer" onMouseDown={(event) => event.stopPropagation()}><div className="drawer-head"><div><span className="drawer-kicker">PEDIDO</span><h3>#{String(order.order_number).padStart(5,"0")}</h3><p>{order.client_name} · {order.first_item || `${order.item_count} ítem(s)`}</p></div><button className="modal-close" type="button" onClick={close}>×</button></div>{isFullyPaid ? <div className="order-paid-banner"><Icon name="check" size={15}/><span>Pedido pagado en su totalidad</span></div> : null}<div className="order-drawer-actions"><button className="button document-primary-action" type="button" disabled={documentBusy !== null} onClick={() => void exportDocument("pdf")}><Icon name="download" size={14}/> {documentBusy === "pdf" ? "Generando..." : "Descargar PDF"}</button><button className="button modal-secondary" type="button" disabled={documentBusy !== null} onClick={() => void exportDocument("print")}><Icon name="printer" size={14}/> {documentBusy === "print" ? "Abriendo..." : "Imprimir"}</button><button className="button button-dark" type="button" onClick={edit}>Editar pedido</button><button className={`button payment-action ${isFullyPaid ? "payment-action-done" : ""}`} type="button" onClick={startPayment} disabled={order.balance <= 0}><Icon name={isFullyPaid ? "check" : "money"} size={14}/> {order.balance > 0 ? "Registrar pago" : "Pedido pagado"}</button></div><div className="order-detail-metrics"><div><span>Total</span><strong>{money(order.total)}</strong></div><div><span>Pagado</span><strong>{money(order.paid)}</strong></div><div><span>Saldo</span><strong className={isFullyPaid ? "balance-paid" : order.balance > 0 ? "balance-due" : ""}>{isFullyPaid ? "Saldado" : money(order.balance)}</strong></div><div><span>Entrega</span><strong>{order.delivery_date || "—"}</strong></div></div><section className="drawer-section"><h4>Estado y prioridad</h4><div className="order-status-controls"><label className="field"><span>Estado</span><select value={order.status} disabled={statusSaving || order.status === "cancelled"} onChange={(event) => void updateStatus(event.target.value as OrderStatus)}>{STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label><div><span>Prioridad</span><b className={`status-pill ${priorityClass(order.priority)}`}>{priorityLabel(order.priority)}</b></div></div></section><section className="drawer-section"><div className="drawer-section-head"><h4>Ítems del pedido</h4><span>{detail.items.length}</span></div><div className="drawer-list order-item-detail-list">{detail.items.map((item) => <div key={item.id}><span><strong>{item.description}</strong><small>{item.quantity} × {money(item.unit_price)}</small></span><b>{money(item.total)}</b></div>)}</div>{order.discount > 0 ? <div className="drawer-discount"><span>Descuento aplicado</span><strong>- {money(order.discount)}</strong></div> : null}</section><section className="drawer-section"><div className="drawer-section-head"><h4>Historial de pagos</h4><span>{detail.payments.length}</span></div>{detail.payments.length === 0 ? <p className="drawer-empty">Todavía no se registraron pagos.</p> : <div className="drawer-list payment-history-list">{detail.payments.map((payment) => { const badge = paymentBadges.get(payment.id); return <div key={payment.id}><span><strong>{payment.method}</strong><small>{new Intl.DateTimeFormat("es-AR", { dateStyle: "short", timeStyle: "short" }).format(new Date(payment.created_at))}{payment.reference ? ` · ${payment.reference}` : ""}</small>{badge ? <span className={`payment-badge ${badge.label === "Pago final" ? "payment-badge-final" : badge.label === "Seña inicial" ? "payment-badge-deposit" : ""}`}>{badge.label} · {badge.percent}% del total</span> : null}</span><b>{money(payment.amount)}</b></div>; })}</div>}</section>{order.notes ? <section className="drawer-section"><h4>Observaciones</h4><p className="client-notes">{order.notes}</p></section> : null}</aside></div>;
 }
 
-function PaymentModal({ detail, methods, lines, setLines, notes, setNotes, money, total, saving, close, submit }: { detail: OrderDetail; methods: PaymentMethod[]; lines: PaymentLineInput[]; setLines: React.Dispatch<React.SetStateAction<PaymentLineInput[]>>; notes: string; setNotes: (value: string) => void; money: (value: number) => string; total: number; saving: boolean; close: () => void; submit: (event: FormEvent) => void }) {
+function PaymentModal({ detail, methods, lines, setLines, notes, setNotes, money, total, saving, error, close, submit }: { error: string; detail: OrderDetail; methods: PaymentMethod[]; lines: PaymentLineInput[]; setLines: React.Dispatch<React.SetStateAction<PaymentLineInput[]>>; notes: string; setNotes: (value: string) => void; money: (value: number) => string; total: number; saving: boolean; close: () => void; submit: (event: FormEvent) => void }) {
   const balanceAfter = detail.order.balance - total;
   function patchLine(index: number, patch: Partial<PaymentLineInput>) { setLines((current) => current.map((line, lineIndex) => lineIndex === index ? { ...line, ...patch } : line)); }
   function addLine() { setLines((current) => [...current, { payment_method_id: methods[0]?.id ?? "", amount: 0, reference: "" }]); }
   function removeLine(index: number) { setLines((current) => current.filter((_, lineIndex) => lineIndex !== index)); }
-  return <div className="modal-backdrop payment-backdrop" onMouseDown={close}><form className="modal-card payment-modal" onMouseDown={(event) => event.stopPropagation()} onSubmit={submit}><div className="modal-head"><div><span>REGISTRAR PAGO</span><h3>Pedido #{String(detail.order.order_number).padStart(5,"0")}</h3></div><button className="modal-close" type="button" onClick={close}>×</button></div><div className="payment-summary"><div><span>Total pedido</span><strong>{money(detail.order.total)}</strong></div><div><span>Ya pagado</span><strong>{money(detail.order.paid)}</strong></div><div className="payment-balance"><span>Saldo pendiente</span><strong>{money(detail.order.balance)}</strong></div></div><section className="payment-lines"><div className="order-items-head"><div><strong>Medios de pago</strong><span>Podés combinar efectivo, transferencia, Mercado Pago, tarjetas u otros.</span></div><button className="button modal-secondary" type="button" onClick={addLine}><Icon name="plus" size={13}/> Otro medio</button></div>{methods.length === 0 ? <div className="form-message error">No hay medios de pago activos. Configuralos antes de registrar un pago.</div> : null}{lines.map((line, index) => <div className="payment-line" key={index}><div className="field"><label>Método</label><select value={line.payment_method_id} onChange={(event) => patchLine(index, { payment_method_id: event.target.value })}><option value="">Seleccionar...</option>{methods.map((method) => <option key={method.id} value={method.id}>{method.name}</option>)}</select></div><div className="field"><label>Monto</label><input type="number" min="0.01" step="0.01" value={line.amount} onChange={(event) => patchLine(index, { amount: Number(event.target.value) })}/></div><div className="field"><label>Referencia</label><input value={line.reference ?? ""} onChange={(event) => patchLine(index, { reference: event.target.value })} placeholder="Opcional"/></div><button className="item-remove" type="button" disabled={lines.length === 1} onClick={() => removeLine(index)}>×</button></div>)}</section><div className="payment-footer"><div className="field"><label>Observaciones del pago</label><textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Opcional"/></div><div className="payment-calculation"><div><span>Pago actual</span><strong>{money(total)}</strong></div><div className={balanceAfter < -0.001 ? "payment-over" : ""}><span>Saldo después</span><strong>{money(Math.max(balanceAfter, 0))}</strong></div></div></div><div className="modal-actions"><button className="button modal-secondary" type="button" onClick={close}>Cancelar</button><button className="button button-dark" type="submit" disabled={saving || methods.length === 0 || total <= 0 || balanceAfter < -0.001}>{saving ? "Registrando..." : "Confirmar pago"}</button></div></form></div>;
+  return <div className="modal-backdrop payment-backdrop" onMouseDown={close}><form className="modal-card payment-modal" onMouseDown={(event) => event.stopPropagation()} onSubmit={submit}><div className="modal-head"><div><span>REGISTRAR PAGO</span><h3>Pedido #{String(detail.order.order_number).padStart(5,"0")}</h3></div><button className="modal-close" type="button" onClick={close}>×</button></div><div className="payment-summary"><div><span>Total pedido</span><strong>{money(detail.order.total)}</strong></div><div><span>Ya pagado</span><strong>{money(detail.order.paid)}</strong></div><div className="payment-balance"><span>Saldo pendiente</span><strong>{money(detail.order.balance)}</strong></div></div><section className="payment-lines"><div className="order-items-head"><div><strong>Medios de pago</strong><span>Podés combinar efectivo, transferencia, Mercado Pago, tarjetas u otros.</span></div><button className="button modal-secondary" type="button" onClick={addLine}><Icon name="plus" size={13}/> Otro medio</button></div>{methods.length === 0 ? <div className="form-message error">No hay medios de pago activos. Configuralos antes de registrar un pago.</div> : null}{lines.map((line, index) => <div className="payment-line" key={index}><div className="field"><label>Método</label><select value={line.payment_method_id} onChange={(event) => patchLine(index, { payment_method_id: event.target.value })}><option value="">Seleccionar...</option>{methods.map((method) => <option key={method.id} value={method.id}>{method.name}</option>)}</select></div><div className="field"><label>Monto</label><input type="number" min="0.01" step="0.01" value={line.amount} onChange={(event) => patchLine(index, { amount: Number(event.target.value) })}/></div><div className="field"><label>Referencia</label><input value={line.reference ?? ""} onChange={(event) => patchLine(index, { reference: event.target.value })} placeholder="Opcional"/></div><button className="item-remove" type="button" disabled={lines.length === 1} onClick={() => removeLine(index)}>×</button></div>)}</section><div className="payment-footer"><div className="field"><label>Observaciones del pago</label><textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Opcional"/></div><div className="payment-calculation"><div><span>Pago actual</span><strong>{money(total)}</strong></div><div className={balanceAfter < -0.001 ? "payment-over" : ""}><span>Saldo después</span><strong>{money(Math.max(balanceAfter, 0))}</strong></div></div></div>{error ? <div className="form-message error">{error}</div> : null}<div className="modal-actions"><button className="button modal-secondary" type="button" onClick={close}>Cancelar</button><button className="button button-dark" type="submit" disabled={saving || methods.length === 0 || total <= 0 || balanceAfter < -0.001}>{saving ? "Registrando..." : "Confirmar pago"}</button></div></form></div>;
 }
 
 function OrderRowsSkeleton() {
