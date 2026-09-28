@@ -128,13 +128,29 @@ async function imageData(url: string | null) {
       const context = canvas.getContext("2d");
       if (!context) return null;
       context.drawImage(image, 0, 0, canvas.width, canvas.height);
-      return { dataUrl: canvas.toDataURL("image/png"), format: "PNG" };
+      return { dataUrl: canvas.toDataURL("image/png"), format: "PNG", width: canvas.width, height: canvas.height };
     } finally {
       URL.revokeObjectURL(objectUrl);
     }
   } catch {
     return null;
   }
+}
+
+// Encaja el logo dentro de una caja máxima (maxW x maxH) sin deformarlo:
+// escala por el lado que más se pasa y devuelve el ancho/alto final más
+// el offset para centrarlo verticalmente dentro de esa misma caja.
+function fitLogoBox(
+  logo: { width?: number; height?: number },
+  maxW: number,
+  maxH: number
+): { w: number; h: number; offsetY: number } {
+  const naturalW = logo.width || maxW;
+  const naturalH = logo.height || maxH;
+  const scale = Math.min(maxW / naturalW, maxH / naturalH, 1);
+  const w = naturalW * scale;
+  const h = naturalH * scale;
+  return { w, h, offsetY: (maxH - h) / 2 };
 }
 
 function companyAddress(profile: CompanyDocumentProfile) {
@@ -226,7 +242,8 @@ async function downloadBusinessDocument(
   let companyX = margin;
   if (logo) {
     try {
-      doc.addImage(logo.dataUrl, logo.format, margin, 13, 31, 18, undefined, "FAST");
+      const logoBox = fitLogoBox(logo, 31, 18);
+      doc.addImage(logo.dataUrl, logo.format, margin, 13 + logoBox.offsetY, logoBox.w, logoBox.h, undefined, "FAST");
       companyX = 50;
     } catch {
       companyX = margin;
@@ -322,11 +339,11 @@ async function downloadBusinessDocument(
       lineWidth: { bottom: 0.1 }
     },
     columnStyles: {
-      0: { cellWidth: 89 },
-      1: { cellWidth: 20, halign: "right" },
-      2: { cellWidth: 31, halign: "right" },
-      3: { cellWidth: 31, halign: "right", fontStyle: "bold" }
-    },
+  0: { cellWidth: 82 },
+  1: { cellWidth: 18, halign: "right" },
+  2: { cellWidth: 30, halign: "right" },
+  3: { cellWidth: 30, halign: "right", fontStyle: "bold" }
+},
     didDrawPage: () => {
       doc.setFontSize(7);
       setTextColor(doc, 145);
@@ -434,7 +451,7 @@ async function downloadBusinessDocument(
   }
 
   if (document.kind === "quote" && profile.terms_and_conditions) {
-    ensureSpace(28);
+    ensureSpace(14);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.setTextColor(rgb.r, rgb.g, rgb.b);
@@ -443,9 +460,18 @@ async function downloadBusinessDocument(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.6);
     setTextColor(doc, 100);
-    const lines = doc.splitTextToSize(profile.terms_and_conditions, pageWidth - margin * 2);
-    doc.text(lines, margin, y, { lineHeightFactor: 1.4 });
-    y += lines.length * 3.8 + 6;
+    const lineHeight = 3.8;
+    const termLines = doc.splitTextToSize(profile.terms_and_conditions, pageWidth - margin * 2) as string[];
+    // Los términos y condiciones pueden ser largos: en vez de reservar un
+    // espacio fijo y dejar que el texto se corte o se superponga con el
+    // pie de página, dibujamos línea por línea y saltamos de página
+    // cuando hace falta, para que nunca quede nada fuera de los márgenes.
+    for (const line of termLines) {
+      ensureSpace(lineHeight + 4);
+      doc.text(line, margin, y);
+      y += lineHeight;
+    }
+    y += 6;
   }
 
   const footer = document.kind === "quote" ? profile.quote_footer : profile.order_footer;
@@ -456,8 +482,21 @@ async function downloadBusinessDocument(
     y += 5;
     doc.setFontSize(7.5);
     setTextColor(doc, 115);
-    doc.text(doc.splitTextToSize(footer, pageWidth - margin * 2), pageWidth / 2, y, { align: "center" });
+    const footerLines = doc.splitTextToSize(footer, pageWidth - margin * 2) as string[];
+    ensureSpace(footerLines.length * 3.6 + 6);
+    doc.text(footerLines, pageWidth / 2, y, { align: "center" });
+    y += footerLines.length * 3.6 + 6;
   }
+
+  // Firma de marca del sistema, discreta, al pie de la última página.
+  // No pisa el pie que dibuja didDrawPage (nombre de la empresa + número
+  // de página) porque va pegada al borde inferior de la hoja.
+  const totalPages = doc.getNumberOfPages();
+  doc.setPage(totalPages);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6.5);
+  setTextColor(doc, 175);
+  doc.text("Sistema de gestión creado por NEOLUZ Studio", pageWidth / 2, pageHeight - 3, { align: "center" });
 
   doc.save(`${profile.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-${document.kind}-${document.number.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.pdf`);
 }
@@ -490,13 +529,13 @@ function printableHtml(profile: CompanyDocumentProfile, document: PrintableDocum
   return `<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><title>${escapeHtml(document.title)} ${escapeHtml(document.number)}</title>
 <style>
-@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#24212c;margin:0;font-size:12px}.topline{height:6px;background:rgb(${rgb.r},${rgb.g},${rgb.b});position:fixed;top:0;left:0;right:0}.header{display:flex;justify-content:space-between;gap:28px;padding-top:10px;padding-bottom:18px;border-bottom:1px solid #e8e5ed}.brand{display:flex;gap:15px;align-items:flex-start}.brand img{width:115px;max-height:68px;object-fit:contain}.brand h1{font-size:21px;margin:0 0 5px}.muted{color:#777281}.brand p,.doc-meta p,.client p{margin:2px 0;line-height:1.35}.doc-meta{text-align:right}.doc-meta small{color:rgb(${rgb.r},${rgb.g},${rgb.b});font-weight:700}.doc-meta h2{font-size:24px;color:rgb(${rgb.r},${rgb.g},${rgb.b});margin:4px 0 8px}.info{display:grid;grid-template-columns:1.5fr 1fr;gap:28px;padding:18px 0}.info h3,.block h3{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgb(${rgb.r},${rgb.g},${rgb.b});margin:0 0 7px}.client strong{font-size:14px}table{width:100%;border-collapse:collapse;margin-top:5px}th{background:rgb(${rgb.r},${rgb.g},${rgb.b});color:white;text-align:left;padding:9px 8px;font-size:10px}td{padding:9px 8px;border-bottom:1px solid #ebe8ef}th:nth-child(n+2),td:nth-child(n+2){text-align:right}.totals{width:290px;margin:17px 0 20px auto}.totals>div{display:flex;justify-content:space-between;padding:5px 0}.totals .grand{border-top:1px solid #ddd7e8;margin-top:4px;padding-top:9px;color:rgb(${rgb.r},${rgb.g},${rgb.b});font-size:17px;font-weight:800}.block{margin-top:17px;padding-top:10px}.block p{margin:3px 0;line-height:1.5}.terms{font-size:10px;color:#696472}.footer{margin-top:25px;padding-top:10px;border-top:1px solid #e8e5ed;text-align:center;color:#777281;font-size:10px}.status{display:inline-block;padding:4px 8px;background:#f0edf5;border-radius:99px;font-size:10px;font-weight:700}.print-help{position:fixed;right:12px;bottom:12px;background:#17151d;color:white;border:0;padding:10px 14px;border-radius:9px;cursor:pointer}@media print{.print-help{display:none}}
+@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#24212c;margin:0;font-size:12px}.topline{height:6px;background:rgb(${rgb.r},${rgb.g},${rgb.b});position:fixed;top:0;left:0;right:0}.header{display:flex;justify-content:space-between;gap:28px;padding-top:10px;padding-bottom:18px;border-bottom:1px solid #e8e5ed}.brand{display:flex;gap:15px;align-items:flex-start}.brand img{width:115px;max-height:68px;object-fit:contain}.brand h1{font-size:21px;margin:0 0 5px}.muted{color:#777281}.brand p,.doc-meta p,.client p{margin:2px 0;line-height:1.35}.doc-meta{text-align:right}.doc-meta small{color:rgb(${rgb.r},${rgb.g},${rgb.b});font-weight:700}.doc-meta h2{font-size:24px;color:rgb(${rgb.r},${rgb.g},${rgb.b});margin:4px 0 8px}.info{display:grid;grid-template-columns:1.5fr 1fr;gap:28px;padding:18px 0}.info h3,.block h3{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgb(${rgb.r},${rgb.g},${rgb.b});margin:0 0 7px}.client strong{font-size:14px}table{width:100%;border-collapse:collapse;margin-top:5px}th{background:rgb(${rgb.r},${rgb.g},${rgb.b});color:white;text-align:left;padding:9px 8px;font-size:10px}td{padding:9px 8px;border-bottom:1px solid #ebe8ef}th:nth-child(n+2),td:nth-child(n+2){text-align:right}.totals{width:290px;margin:17px 0 20px auto}.totals>div{display:flex;justify-content:space-between;padding:5px 0}.totals .grand{border-top:1px solid #ddd7e8;margin-top:4px;padding-top:9px;color:rgb(${rgb.r},${rgb.g},${rgb.b});font-size:17px;font-weight:800}.block{margin-top:17px;padding-top:10px}.block p{margin:3px 0;line-height:1.5}.terms{font-size:10px;color:#696472}.footer{margin-top:25px;padding-top:10px;border-top:1px solid #e8e5ed;text-align:center;color:#777281;font-size:10px}.status{display:inline-block;padding:4px 8px;background:#f0edf5;border-radius:99px;font-size:10px;font-weight:700}.print-help{position:fixed;right:12px;bottom:12px;background:#17151d;color:white;border:0;padding:10px 14px;border-radius:9px;cursor:pointer}@media print{.print-help{display:none}}.brand-mark{margin-top:16px;text-align:center;color:#b7b2c1;font-size:8.5px}
 </style></head><body><div class="topline"></div>
 <header class="header"><div class="brand">${profile.document_settings.show_logo !== false && profile.logo_url ? `<img src="${escapeHtml(profile.logo_url)}" alt="Logo">` : ""}<div><h1>${escapeHtml(profile.name)}</h1>${profile.legal_name && profile.legal_name !== profile.name ? `<p class="muted">${escapeHtml(profile.legal_name)}</p>` : ""}${profile.document_settings.show_tax_id !== false && profile.tax_id ? `<p>CUIT: ${escapeHtml(profile.tax_id)}</p>` : ""}${profile.document_settings.show_contact !== false && companyAddress(profile) ? `<p>${escapeHtml(companyAddress(profile))}</p>` : ""}${profile.document_settings.show_contact !== false && profile.phone ? `<p>${escapeHtml(profile.phone)}</p>` : ""}${profile.document_settings.show_contact !== false && profile.email ? `<p>${escapeHtml(profile.email)}</p>` : ""}</div></div><div class="doc-meta"><small>${escapeHtml(document.title)}</small><h2>${escapeHtml(document.number)}</h2>${document.kind === "quote" && profile.quote_header ? `<p class="muted">${escapeHtml(profile.quote_header)}</p>` : ""}<span class="status">${escapeHtml(statusLabel(document.status))}</span></div></header>
 <section class="info"><div class="client"><h3>Cliente</h3><strong>${escapeHtml(clientIdentity(document.client))}</strong>${document.client.tax_id ? `<p>CUIT/DNI: ${escapeHtml(document.client.tax_id)}</p>` : ""}${document.client.address ? `<p>${escapeHtml(document.client.address)}</p>` : ""}${document.client.phone ? `<p>${escapeHtml(document.client.phone)}</p>` : ""}${document.client.email ? `<p>${escapeHtml(document.client.email)}</p>` : ""}</div><div><h3>Documento</h3><p>${escapeHtml(document.issueLabel)}: <b>${escapeHtml(date(profile,document.issueDate))}</b></p><p>${escapeHtml(document.secondaryLabel)}: <b>${escapeHtml(date(profile,document.secondaryDate))}</b></p></div></section>
 <table><thead><tr><th>Descripción</th><th>Cant.</th><th>Precio unit.</th><th>Total</th></tr></thead><tbody>${document.items.map(item=>`<tr><td>${escapeHtml(item.description)}</td><td>${escapeHtml(new Intl.NumberFormat(profile.locale,{maximumFractionDigits:3}).format(item.quantity))}</td><td>${escapeHtml(money(profile,item.unit_price))}</td><td><b>${escapeHtml(money(profile,item.total))}</b></td></tr>`).join("")}</tbody></table>
 <div class="totals"><div><span>Subtotal</span><b>${escapeHtml(money(profile,document.subtotal))}</b></div>${document.discount>0?`<div><span>Descuento</span><b>- ${escapeHtml(money(profile,document.discount))}</b></div>`:""}<div class="grand"><span>Total</span><span>${escapeHtml(money(profile,document.total))}</span></div>${document.kind==="order"&&document.paid!=null&&document.balance!=null?`<div><span>Pagado</span><b>${escapeHtml(money(profile,document.paid))}</b></div><div><span>Saldo</span><b>${escapeHtml(money(profile,document.balance))}</b></div>`:""}</div>
-${document.notes?`<section class="block"><h3>Observaciones</h3><p>${escapeHtml(document.notes).replaceAll("\n","<br>")}</p></section>`:""}${paymentHtml}${termsHtml}${footer?`<footer class="footer">${escapeHtml(footer).replaceAll("\n","<br>")}</footer>`:""}<button class="print-help" onclick="window.print()">Imprimir / Guardar PDF</button><script>window.addEventListener('load',()=>{const imgs=[...document.images];Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(r=>{img.onload=r;img.onerror=r}))).then(()=>setTimeout(()=>window.print(),150));});</script></body></html>`;
+${document.notes?`<section class="block"><h3>Observaciones</h3><p>${escapeHtml(document.notes).replaceAll("\n","<br>")}</p></section>`:""}${paymentHtml}${termsHtml}${footer?`<footer class="footer">${escapeHtml(footer).replaceAll("\n","<br>")}</footer>`:""}<div class="brand-mark">Sistema de gestión creado por NEOLUZ Studio</div><button class="print-help" onclick="window.print()">Imprimir / Guardar PDF</button><script>window.addEventListener('load',()=>{const imgs=[...document.images];Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(r=>{img.onload=r;img.onerror=r}))).then(()=>setTimeout(()=>window.print(),150));});</script></body></html>`;
 }
 
 function openPrintWindow(profile: CompanyDocumentProfile, document: PrintableDocument) {
@@ -556,7 +595,10 @@ export async function downloadReportPdf(
   doc.setFillColor(rgb.r, rgb.g, rgb.b);
   doc.rect(0, 0, width, 7, "F");
   if (logo) {
-    try { doc.addImage(logo.dataUrl, logo.format, margin, 13, 28, 16, undefined, "FAST"); } catch { /* sin logo */ }
+    try {
+      const logoBox = fitLogoBox(logo, 28, 16);
+      doc.addImage(logo.dataUrl, logo.format, margin, 13 + logoBox.offsetY, logoBox.w, logoBox.h, undefined, "FAST");
+    } catch { /* sin logo */ }
   }
   const brandX = logo ? 49 : margin;
   doc.setFont("helvetica", "bold");
@@ -648,6 +690,6 @@ export function printReport(
   const rgb=hexToRgb(profile.primary_color);
   const win=window.open("","_blank","width=980,height=900");
   if(!win) throw new Error("El navegador bloqueó la ventana de impresión.");
-  win.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Reporte GestArt</title><style>@page{size:A4;margin:15mm}body{font-family:Arial,sans-serif;color:#24212c}.head{display:flex;justify-content:space-between;border-bottom:4px solid rgb(${rgb.r},${rgb.g},${rgb.b});padding-bottom:14px}.head img{max-width:120px;max-height:60px}.head h1{margin:0;font-size:22px}.head h2{margin:0;color:rgb(${rgb.r},${rgb.g},${rgb.b});text-align:right}.muted{color:#777281;font-size:12px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:22px 0}.kpi{border:1px solid #e7e4ec;border-radius:8px;padding:12px}.kpi span{display:block;color:#777281;font-size:10px;text-transform:uppercase}.kpi strong{display:block;margin-top:5px;font-size:16px}table{width:100%;border-collapse:collapse;margin-top:20px}th{background:#f4f2f7;text-align:left;padding:8px}td{padding:8px;border-bottom:1px solid #e7e4ec}td:not(:first-child),th:not(:first-child){text-align:right}.print{position:fixed;right:12px;bottom:12px;background:#17151d;color:white;border:0;padding:10px 14px;border-radius:8px}@media print{.print{display:none}}</style></head><body><header class="head"><div>${profile.document_settings.show_logo !== false && profile.logo_url?`<img src="${escapeHtml(profile.logo_url)}">`:""}<h1>${escapeHtml(profile.name)}</h1><div class="muted">${escapeHtml(profile.document_settings.show_tax_id !== false && profile.tax_id?`CUIT ${profile.tax_id}`:"")}</div></div><div><h2>REPORTE</h2><div class="muted">${escapeHtml(date(profile,fromDate))} — ${escapeHtml(date(profile,toDate))}</div></div></header><div class="grid">${rows.map(([label,value])=>`<div class="kpi"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}</div><h3>Top clientes</h3><table><thead><tr><th>Cliente</th><th>Pedidos</th><th>Ventas</th><th>Pendiente</th></tr></thead><tbody>${data.topClients.slice(0,10).map(row=>`<tr><td>${escapeHtml(row.client_name)}</td><td>${row.orders_count}</td><td>${escapeHtml(money(profile,row.sales_total))}</td><td>${escapeHtml(money(profile,row.outstanding_total))}</td></tr>`).join("")}</tbody></table><button class="print" onclick="window.print()">Imprimir</button><script>window.addEventListener('load',()=>{const imgs=[...document.images];Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(r=>{img.onload=r;img.onerror=r}))).then(()=>setTimeout(()=>window.print(),150));});</script></body></html>`);
+  win.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Reporte GestArt</title><style>@page{size:A4;margin:15mm}body{font-family:Arial,sans-serif;color:#24212c}.head{display:flex;justify-content:space-between;border-bottom:4px solid rgb(${rgb.r},${rgb.g},${rgb.b});padding-bottom:14px}.head img{max-width:120px;max-height:60px}.head h1{margin:0;font-size:22px}.head h2{margin:0;color:rgb(${rgb.r},${rgb.g},${rgb.b});text-align:right}.muted{color:#777281;font-size:12px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:22px 0}.kpi{border:1px solid #e7e4ec;border-radius:8px;padding:12px}.kpi span{display:block;color:#777281;font-size:10px;text-transform:uppercase}.kpi strong{display:block;margin-top:5px;font-size:16px}table{width:100%;border-collapse:collapse;margin-top:20px}th{background:#f4f2f7;text-align:left;padding:8px}td{padding:8px;border-bottom:1px solid #e7e4ec}td:not(:first-child),th:not(:first-child){text-align:right}.print{position:fixed;right:12px;bottom:12px;background:#17151d;color:white;border:0;padding:10px 14px;border-radius:8px}@media print{.print{display:none}}.brand-mark{margin-top:20px;text-align:center;color:#b7b2c1;font-size:8.5px}</style></head><body><header class="head"><div>${profile.document_settings.show_logo !== false && profile.logo_url?`<img src="${escapeHtml(profile.logo_url)}">`:""}<h1>${escapeHtml(profile.name)}</h1><div class="muted">${escapeHtml(profile.document_settings.show_tax_id !== false && profile.tax_id?`CUIT ${profile.tax_id}`:"")}</div></div><div><h2>REPORTE</h2><div class="muted">${escapeHtml(date(profile,fromDate))} — ${escapeHtml(date(profile,toDate))}</div></div></header><div class="grid">${rows.map(([label,value])=>`<div class="kpi"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}</div><h3>Top clientes</h3><table><thead><tr><th>Cliente</th><th>Pedidos</th><th>Ventas</th><th>Pendiente</th></tr></thead><tbody>${data.topClients.slice(0,10).map(row=>`<tr><td>${escapeHtml(row.client_name)}</td><td>${row.orders_count}</td><td>${escapeHtml(money(profile,row.sales_total))}</td><td>${escapeHtml(money(profile,row.outstanding_total))}</td></tr>`).join("")}</tbody></table><div class="brand-mark">Sistema de gestión creado por NEOLUZ Studio</div><button class="print" onclick="window.print()">Imprimir</button><script>window.addEventListener('load',()=>{const imgs=[...document.images];Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(r=>{img.onload=r;img.onerror=r}))).then(()=>setTimeout(()=>window.print(),150));});</script></body></html>`);
   win.document.close();
 }

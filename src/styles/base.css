@@ -53,6 +53,17 @@
     box-sizing: border-box;
 }
 
+/* Los estilos de componentes quitan el outline nativo del navegador en
+   inputs, botones y links (outline:0) para poner su propio diseño, pero
+   varios no dejaban ningún reemplazo visual para navegación por teclado.
+   Este anillo de foco global, con el color de marca, cubre esos casos sin
+   afectar el mouse (solo aparece con :focus-visible). */
+:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
 html {
     min-width: 320px;
     scroll-behavior: smooth;
@@ -1905,5 +1916,31 @@ a {
 
     .quick-actions-grid {
         grid-template-columns: 1fr;
+    }
+}
+/* Estado de carga de rutas (App Router loading.tsx) */
+.route-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    min-height: 50vh;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.route-loading-spinner {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 3px solid var(--primary-light);
+    border-top-color: var(--primary);
+    animation: route-loading-spin 0.7s linear infinite;
+}
+
+@keyframes route-loading-spin {
+    to {
+        transform: rotate(360deg);
     }
 }

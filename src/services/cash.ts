@@ -211,9 +211,6 @@ export async function createManualCashMovement(
 
     p_quote_id: input.quote_id || null,
 
-    p_order_id: input.order_id || null,
-
-
     p_supplier_id: input.supplier_id || null,
 
     p_notes: input.notes?.trim() || null,

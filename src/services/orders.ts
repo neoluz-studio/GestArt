@@ -16,6 +16,17 @@ export type OrderStatus =
 
 export type OrderPriority = "urgent" | "high" | "normal" | "low";
 
+export type OrderPickerSummary = {
+  id: string;
+  order_number: number;
+  client_id: string;
+  status: string;
+  total: number;
+  paid: number;
+  balance: number;
+  order_date: string;
+};
+
 export type OrderSummary = {
   id: string;
   order_number: number;
@@ -326,7 +337,7 @@ export async function listOrdersByClient(
   supabase: SupabaseClient,
   companyId: string,
   clientId: string
-): Promise<OrderSummary[]> {
+): Promise<OrderPickerSummary[]> {
 
   const { data, error } = await supabase
     .from("orders")
@@ -340,18 +351,51 @@ export async function listOrdersByClient(
     `)
     .eq("company_id", companyId)
     .eq("client_id", clientId)
+    .neq("status", "cancelled")
     .order("order_date", {
       ascending:false
     });
 
   if(error) throw error;
 
-  return (data ?? []).map((row:any)=>({
-    ...row,
-    order_number:Number(row.order_number ?? 0),
-    total:Number(row.total ?? 0)
-  })) as OrderSummary[];
+  const rows = data ?? [];
+  const orderIds = rows.map((row: any) => row.id);
 
+  // Traemos los pagos ya registrados para poder calcular el saldo
+  // pendiente de cada pedido (mismo criterio que get_order_summaries).
+  let paidByOrder = new Map<string, number>();
+  if (orderIds.length > 0) {
+    const { data: payments, error: paymentsError } = await supabase
+      .from("payments")
+      .select("order_id, amount")
+      .eq("company_id", companyId)
+      .in("order_id", orderIds);
+
+    if (paymentsError) throw paymentsError;
+
+    for (const payment of payments ?? []) {
+      const current = paidByOrder.get(payment.order_id) ?? 0;
+      paidByOrder.set(payment.order_id, current + Number(payment.amount ?? 0));
+    }
+  }
+
+  return rows
+    .map((row: any) => {
+      const total = Number(row.total ?? 0);
+      const paid = paidByOrder.get(row.id) ?? 0;
+      return {
+        id: row.id,
+        order_number: Number(row.order_number ?? 0),
+        client_id: row.client_id,
+        status: row.status,
+        order_date: row.order_date,
+        total,
+        paid,
+        balance: Math.max(total - paid, 0)
+      } satisfies OrderPickerSummary;
+    })
+    // Un pedido ya saldado no tiene sentido ofrecerlo para cargar más pago.
+    .filter((order) => order.balance > 0);
 }
 export async function getOrderById(
   supabase: SupabaseClient,

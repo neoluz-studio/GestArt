@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Providers } from "@/components/Providers";
 import "@/styles/base.css";
-import "@/styles/gestart.css";
 import "@/styles/pedidos.css";
 import "@/styles/presupuestos.css";
+import "@/styles/gestart.css";
 
 export const metadata: Metadata = {
   title: "GestArt | Gestión inteligente",

@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -95,6 +96,7 @@ const DEMO_ID = "demo-company";
 
 export function TenantProvider({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
+  const loadedForUserId = useRef<string | null>(null);
   const [memberships, setMemberships] = useState<TenantMembership[]>([]);
   const [currentCompanyId, setCurrentCompanyIdState] = useState<string | null>(
     demoMode ? DEMO_ID : null
@@ -210,11 +212,20 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
  useEffect(() => {
 
-  if (!authLoading) {
-    void reload();
-  }
+  if (authLoading) return;
 
-}, [authLoading, reload]);
+  // Evita recargar toda la data de la empresa (clientes, pedidos, config)
+  // cada vez que AuthContext emite una nueva referencia de sesión por un
+  // refresco de token en segundo plano (por ejemplo, al volver de otra
+  // app). Solo recargamos cuando el usuario efectivamente cambió
+  // (inicio de sesión, cierre de sesión o cambio de cuenta).
+  const userId = user?.id ?? null;
+  if (loadedForUserId.current === userId) return;
+  loadedForUserId.current = userId;
+
+  void reload();
+
+}, [authLoading, user, reload]);
 
   const setCurrentCompanyId = useCallback(
     (companyId: string) => {

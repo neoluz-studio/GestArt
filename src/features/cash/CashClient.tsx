@@ -12,8 +12,11 @@ import { listSuppliers, type SupplierLookup } from "@/services/inventory";
 import { listClients, type ClientSummary } from "@/services/clients";
 import {
   getOrderById,
-  listOrdersByClient
+  listOrdersByClient,
+  registerMixedPayment,
+  type OrderPickerSummary
 } from "@/services/orders";
+import { listQuotesByClient, type QuotePickerSummary } from "@/services/quotes";
 import {
   closeCash,
   createManualCashMovement,
@@ -160,8 +163,8 @@ const [closures, setClosures] = useState<CashClosure[]>([]);
 const [clients, setClients] = useState<ClientSummary[]>([]);
 const [clientSearch, setClientSearch] = useState("");
 const [selectedClient, setSelectedClient] = useState<ClientSummary | null>(null);
-const [quotes, setQuotes] = useState<any[]>([]);
-const [orders, setOrders] = useState<any[]>([]);
+const [quotes, setQuotes] = useState<QuotePickerSummary[]>([]);
+const [orders, setOrders] = useState<OrderPickerSummary[]>([]);
 
   const [loading, setLoading] = useState(!demoMode);
   const [error, setError] = useState("");
@@ -210,7 +213,6 @@ async function handleDeleteCashMovement() {
 
   try {
 
-    // acá después conectamos el RPC real
     await deleteCashMovement(
   supabaseBrowser,
   currentCompany.id,
@@ -251,58 +253,6 @@ async function handleDeleteCashMovement() {
 
   const dateTime = (value: string) =>
     new Intl.DateTimeFormat(locale, { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
-async function handleClientChange(clientId: string) {
-
-  const client =
-    clients.find(
-      item => item.id === clientId
-    ) || null;
-
-
-  setSelectedClient(client);
-
-
-  setMovementForm(prev => ({
-    ...prev,
-    client_id: clientId || null,
-    quote_id: null,
-    order_id: null
-  }));
-
-
-  setQuotes([]);
-  setOrders([]);
-
-
-  if (
-    !clientId ||
-    !currentCompany ||
-    !supabaseBrowser
-  ) {
-    return;
-  }
-
-
-  try {
-
-  const clientOrders =
-  await listOrdersByClient(
-    supabaseBrowser,
-    currentCompany.id,
-    clientId
-  );
-
-
-setOrders(clientOrders);
-
-  } catch (error) {
-
-    setError(errorMessage(error));
-
-  }
-
-}
-
 
 
 async function handleQuoteChange(quoteId: string) {
@@ -474,7 +424,26 @@ setClients(clientRows);
     setSavingMovement(true);
     setError("");
     try {
-      await createManualCashMovement(supabaseBrowser, currentCompany.id, movementForm);
+      if (movementForm.movement_type === "income" && movementForm.order_id) {
+        // Este ingreso corresponde a un pedido puntual: lo registramos como
+        // pago del pedido (misma función que "Registrar pago" en Pedidos)
+        // para que el saldo del pedido y la caja queden sincronizados.
+        await registerMixedPayment(
+          supabaseBrowser,
+          currentCompany.id,
+          movementForm.order_id,
+          [
+            {
+              payment_method_id: movementForm.payment_method_id,
+              amount: movementForm.amount,
+              reference: movementForm.reference || null
+            }
+          ],
+          movementForm.notes || undefined
+        );
+      } else {
+        await createManualCashMovement(supabaseBrowser, currentCompany.id, movementForm);
+      }
       setMovementOpen(false);
       setSuccess("Movimiento registrado.");
       await Promise.all([loadBase(), loadMovements()]);
@@ -965,6 +934,18 @@ if (client && currentCompany && supabaseBrowser) {
     setError(errorMessage(error));
   });
 
+  void listQuotesByClient(
+    supabaseBrowser,
+    currentCompany.id,
+    client.id
+  )
+  .then((rows) => {
+    setQuotes(rows);
+  })
+  .catch((error) => {
+    setError(errorMessage(error));
+  });
+
 }
 }}
     >
@@ -987,8 +968,10 @@ if (client && currentCompany && supabaseBrowser) {
   </label>
   
 )}
-{/*
-{quotes.length > 0 && (
+{/* Uncommented: reactivamos el selector de Presupuesto que ya tenía
+   toda la lógica lista (handleQuoteChange) pero nunca se conectaba a
+   la carga real de datos. */}
+{movementForm.movement_type === "income" && quotes.length > 0 && (
   <label className="form-field full-field">
 
     <span>Presupuesto</span>
@@ -1020,9 +1003,8 @@ if (client && currentCompany && supabaseBrowser) {
 
   </label>
   )}
-  */}
 
-{orders.length > 0 && (
+{movementForm.movement_type === "income" && orders.length > 0 && (
   <label className="form-field full-field">
 
     <span>Pedido</span>
@@ -1031,9 +1013,16 @@ if (client && currentCompany && supabaseBrowser) {
       value={movementForm.order_id || ""}
       onChange={(event) => {
 
+        const orderId = event.target.value || null;
+        const picked = orders.find((item) => item.id === orderId);
+
         setMovementForm({
           ...movementForm,
-          order_id: event.target.value || null
+          order_id: orderId,
+          quote_id: null,
+          // Precargamos el saldo pendiente como monto sugerido; el usuario
+          // igual puede modificarlo si cobró una seña parcial.
+          amount: picked ? picked.balance : movementForm.amount
         });
 
       }}
@@ -1050,7 +1039,7 @@ if (client && currentCompany && supabaseBrowser) {
           key={order.id}
           value={order.id}
         >
-          #{order.order_number} - {money(order.total)}
+          #{order.order_number} - Saldo: {money(order.balance)}
         </option>
 
       ))}

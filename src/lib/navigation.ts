@@ -5,7 +5,7 @@ export const navigation = [
       { code: "dashboard", href: "/dashboard", label: "Inicio", icon: "home" as const },
       { code: "clients", href: "/clientes", label: "Clientes", icon: "users" as const },
       { code: "quotes", href: "/presupuestos", label: "Presupuestos", icon: "quote" as const },
-      { code: "orders", href: "/pedidos", label: "Pedidos", icon: "orders" as const, counter: "5" },
+      { code: "orders", href: "/pedidos", label: "Pedidos", icon: "orders" as const },
       { code: "production", href: "/produccion", label: "Producción", icon: "production" as const },
       { code: "materials", href: "/materiales", label: "Materiales", icon: "materials" as const }
     ]

@@ -34,6 +34,16 @@ export type QuoteInput = {
   items: QuoteItemInput[];
 };
 
+export type QuotePickerSummary = {
+  id: string;
+  quote_number: number;
+  client_id: string;
+  status: string;
+  issue_date: string;
+  total: number;
+  converted_order_id: string | null;
+};
+
 export type QuoteSummary = {
   id: string;
   quote_number: number;
@@ -292,7 +302,7 @@ export async function listQuotesByClient(
   supabase: SupabaseClient,
   companyId: string,
   clientId: string
-): Promise<QuoteSummary[]> {
+): Promise<QuotePickerSummary[]> {
 
   const { data, error } = await supabase
     .from("quotes")
@@ -302,7 +312,8 @@ export async function listQuotesByClient(
       client_id,
       status,
       issue_date,
-      total
+      total,
+      converted_order_id
     `)
     .eq("company_id", companyId)
     .eq("client_id", clientId)
@@ -313,8 +324,12 @@ export async function listQuotesByClient(
   if (error) throw error;
 
   return (data ?? []).map((row: any) => ({
-    ...row,
+    id: row.id,
     quote_number: Number(row.quote_number ?? 0),
-    total: Number(row.total ?? 0)
-  })) as QuoteSummary[];
+    client_id: row.client_id,
+    status: row.status,
+    issue_date: row.issue_date,
+    total: Number(row.total ?? 0),
+    converted_order_id: row.converted_order_id ?? null
+  } satisfies QuotePickerSummary));
 }

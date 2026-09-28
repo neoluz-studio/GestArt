@@ -74,9 +74,23 @@ export function AuthProvider({
         subscription
       }
     } = supabaseBrowser.auth.onAuthStateChange(
-      (_event, nextSession) => {
+      (event, nextSession) => {
 
-        setSession(nextSession);
+        // Supabase dispara este evento cada vez que la pestaña recupera el
+        // foco (por ejemplo, al volver de WhatsApp) para refrescar el token
+        // en segundo plano. Si seguimos disparando setSession en cada
+        // TOKEN_REFRESHED con el mismo usuario, todo el árbol de contexto
+        // (TenantContext y las páginas que dependen de currentCompany)
+        // vuelve a recargar datos y el usuario pierde lo que estaba
+        // escribiendo. Solo actualizamos el estado cuando el usuario
+        // realmente cambió (login, logout, cambio de cuenta).
+        setSession((current) => {
+          const sameUser = current?.user?.id && current.user.id === nextSession?.user?.id;
+          if (event === "TOKEN_REFRESHED" && sameUser) {
+            return current;
+          }
+          return nextSession;
+        });
         setLoading(false);
 
       }

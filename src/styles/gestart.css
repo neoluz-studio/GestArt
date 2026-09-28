@@ -564,7 +564,14 @@ button { font-family: inherit; }
 .client-active-check small { margin-top:2px; color:var(--text-muted); font-size:8px; }
 
 .detail-loading { position:fixed; z-index:600; right:24px; bottom:24px; padding:12px 16px; border-radius:12px; background:var(--text); color:#fff; box-shadow:var(--shadow-medium); font-size:10px; font-weight:700; }
-.drawer-backdrop { position:fixed; z-index:520; inset:0; background:rgba(16,14,22,.48); backdrop-filter:blur(3px); }
+.drawer-backdrop {
+  position: fixed;
+  z-index: 520;
+  inset: 0;
+  background: rgba(16,14,22,.48);
+  backdrop-filter: blur(3px);
+}
+
 .client-drawer { position:absolute; top:0; right:0; width:min(560px,100%); height:100%; overflow:auto; background:#fff; box-shadow:-22px 0 70px rgba(23,21,29,.18); animation:drawer-in .2s ease-out; }
 @keyframes drawer-in { from { transform:translateX(40px); opacity:.4; } }
 .drawer-head { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; padding:26px 26px 18px; border-bottom:1px solid var(--border); }
@@ -663,9 +670,26 @@ button { font-family: inherit; }
 .order-drawer-actions { display:flex; gap:8px; padding:14px 26px; border-bottom:1px solid var(--border); }
 .payment-action { background:var(--accent); color:#17151d; }
 .payment-action:disabled { opacity:.55; cursor:not-allowed; }
+.payment-action-done { background:var(--success-light); color:var(--success); }
 .order-detail-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; padding:18px 26px; }
 .order-detail-metrics > div { min-width:0; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--surface-soft); }
 .order-detail-metrics span,.order-detail-metrics strong { display:block; }
+.balance-paid { color:var(--success)!important; }
+.order-paid-banner { display:flex; align-items:center; gap:8px; margin:0 26px 14px; padding:10px 14px; border-radius:12px; background:var(--success-light); color:var(--success); font-size:9px; font-weight:800; }
+.order-deposit-box { margin:0 26px 18px; padding:14px 16px; border:1px dashed var(--border); border-radius:14px; background:var(--surface-soft); display:flex; flex-direction:column; gap:12px; }
+.order-deposit-copy { display:flex; align-items:flex-start; gap:10px; color:var(--text-muted); }
+.order-deposit-copy strong { display:block; color:var(--text); font-size:10px; margin-bottom:2px; }
+.order-deposit-copy span { font-size:8.5px; line-height:1.4; }
+.order-deposit-input { display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; }
+.order-deposit-input label { display:flex; flex-direction:column; gap:4px; font-size:8px; color:var(--text-muted); }
+.order-deposit-input input { min-width:140px; }
+.order-deposit-quick { display:flex; gap:6px; }
+.order-deposit-quick button { padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface); font-size:8px; font-weight:700; cursor:pointer; color:var(--text-muted); transition:all .15s ease; }
+.order-deposit-quick button:hover { border-color:var(--primary); color:var(--primary); }
+.payment-history-list span { display:flex; flex-direction:column; gap:3px; }
+.payment-badge { display:inline-flex; align-self:flex-start; margin-top:2px; padding:2px 8px; border-radius:999px; font-size:7.5px; font-weight:800; background:var(--surface-soft); color:var(--text-muted); border:1px solid var(--border); }
+.payment-badge-deposit { background:var(--primary-light); color:var(--primary); border-color:var(--primary); }
+.payment-badge-final { background:var(--success-light); color:var(--success); border-color:var(--success); }
 .order-detail-metrics span { color:var(--text-muted); font-size:7px; font-weight:800; text-transform:uppercase; }
 .order-detail-metrics strong { margin-top:5px; overflow:hidden; font-family:"Manrope",sans-serif; font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
 .order-status-controls { display:grid; grid-template-columns:1fr 1fr; align-items:end; gap:14px; }

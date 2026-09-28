@@ -183,9 +183,6 @@ export function Sidebar() {
                     <Icon name={item.icon} size={16} />
                   </span>
                   <span>{item.label}</span>
-                  {"counter" in item && item.counter ? (
-                    <span className="nav-counter">{item.counter}</span>
-                  ) : null}
                 </Link>
               ))}
             </div>

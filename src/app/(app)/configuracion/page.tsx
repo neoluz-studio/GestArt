@@ -294,7 +294,7 @@ export default function ConfiguracionPage() {
                   </div>
                   <div>
                     <strong>Logo principal</strong>
-                    <span>PNG, JPG o WEBP · máximo 3 MB.</span>
+                    <span>PNG, JPG o WEBP · máximo 3 MB. Se ajusta automáticamente sin deformarse; PNG con fondo transparente queda mejor.</span>
                     <div className="document-logo-actions">
                       <input
                         ref={fileRef}
