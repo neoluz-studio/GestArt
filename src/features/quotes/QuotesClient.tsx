@@ -222,7 +222,7 @@ useEffect(() => {
   const [convertNotes, setConvertNotes] = useState("");
   const [converting, setConverting] = useState(false);
   const [convertedOrder, setConvertedOrder] = useState<{ id: string; number: number } | null>(null);
-
+const [convertQuote, setConvertQuote] = useState<QuoteSummary | null>(null);
   const locale = settings?.locale || "es-AR";
   const currency = settings?.currency || "ARS";
   const money = (value: number) =>
@@ -650,67 +650,73 @@ useEffect(() => {
   }
 
   function openConversion(quote: QuoteSummary) {
-    if (quote.status !== "approved") {
-      setError("Solo los presupuestos aprobados pueden convertirse en pedido.");
-      return;
-    }
-    setDetail({ quote, items: [] });
-    setConvertDeliveryDate("");
-    setConvertPriority("normal");
-    setConvertNotes("");
-    setConvertOpen(true);
-    setConvertedOrder(null);
-    setError("");
+  if (quote.status !== "approved") {
+    setError("Solo los presupuestos aprobados pueden convertirse en pedido.");
+    return;
+  }
+  setConvertQuote(quote);
+  setConvertDeliveryDate("");
+  setConvertPriority("normal");
+  setConvertNotes("");
+  setConvertOpen(true);
+  setConvertedOrder(null);
+  setError("");
+}
+
+function closeConversion() {
+  setConvertOpen(false);
+  setConvertQuote(null);
+}
+
+async function convert(event: FormEvent) {
+  event.preventDefault();
+  if (!convertQuote) return;
+
+  const quoteId = convertQuote.id;
+
+  if (demoMode) {
+    closeConversion();
+    setConvertedOrder({ id: "demo-order", number: 999 });
+    setSuccess("Presupuesto convertido en pedido en modo demo.");
+    return;
   }
 
-  async function convert(event: FormEvent) {
-    event.preventDefault();
-    if (!detail) return;
+  if (!supabaseBrowser || !currentCompany) return;
 
-    if (demoMode) {
-      setConvertOpen(false);
-      setConvertedOrder({ id: "demo-order", number: 999 });
-      setSuccess("Presupuesto convertido en pedido en modo demo.");
-      return;
-    }
+  setConverting(true);
+  setError("");
+  try {
+    const result = await convertQuoteToOrder(
+      supabaseBrowser,
+      currentCompany.id,
+      quoteId,
+      {
+        delivery_date: convertDeliveryDate || null,
+        priority: convertPriority,
+        notes: convertNotes
+      }
+    );
+    setConvertedOrder({
+      id: result.order_id,
+      number: result.order_number
+    });
+    closeConversion();
+    setSuccess(
+      `Presupuesto convertido en pedido #${String(result.order_number).padStart(5, "0")}.`
+    );
+    await Promise.all([loadBase(), load()]);
 
-    if (!supabaseBrowser || !currentCompany) return;
-
-    setConverting(true);
-    setError("");
-    try {
-      const result = await convertQuoteToOrder(
-        supabaseBrowser,
-        currentCompany.id,
-        detail.quote.id,
-        {
-          delivery_date: convertDeliveryDate || null,
-          priority: convertPriority,
-          notes: convertNotes
-        }
-      );
-      setConvertedOrder({
-        id: result.order_id,
-        number: result.order_number
-      });
-      setConvertOpen(false);
-      setSuccess(
-        `Presupuesto convertido en pedido #${String(result.order_number).padStart(5, "0")}.`
-      );
-      await Promise.all([loadBase(), load()]);
+    if (detail?.quote.id === quoteId) {
       setDetail(
-        await loadQuoteDetail(
-          supabaseBrowser,
-          currentCompany.id,
-          detail.quote.id
-        )
+        await loadQuoteDetail(supabaseBrowser, currentCompany.id, quoteId)
       );
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setConverting(false);
     }
+  } catch (err) {
+    setError(errorMessage(err));
+  } finally {
+    setConverting(false);
   }
+}
 
   const detailQuote = detail?.quote ?? null;
   const detailItems = detail?.items ?? [];
@@ -1457,108 +1463,108 @@ useEffect(() => {
           </div>
         )}
 
-        {convertOpen && detailQuote && (
-          <div
-            className="modal-backdrop"
-            role="presentation"
-            onMouseDown={(event) => {
-              if (event.currentTarget === event.target) setConvertOpen(false);
-            }}
+        {convertOpen && convertQuote && (
+  <div
+    className="modal-backdrop quote-convert-backdrop"
+    role="presentation"
+    onMouseDown={(event) => {
+      if (event.currentTarget === event.target) closeConversion();
+    }}
+  >
+    <form className="modal-card quote-convert-modal" onSubmit={convert}>
+      <div className="modal-head">
+        <div>
+          <span>PRESUPUESTO → PEDIDO</span>
+          <h3>
+            Convertir P-{String(convertQuote.quote_number).padStart(4, "0")}
+          </h3>
+        </div>
+        <button
+          type="button"
+          className="modal-close"
+          onClick={closeConversion}
+        >
+          ×
+        </button>
+      </div>
+
+      <div className="quote-convert-summary">
+        <div>
+          <span>Cliente</span>
+          <strong>{convertQuote.client_name}</strong>
+        </div>
+        <div>
+          <span>Total</span>
+          <strong>{money(convertQuote.total)}</strong>
+        </div>
+        <div>
+          <span>Ítems</span>
+          <strong>{convertQuote.item_count}</strong>
+        </div>
+      </div>
+
+      <div className="client-form-grid">
+        <label className="form-field">
+          <span>Fecha de entrega</span>
+          <input
+            type="date"
+            min={today()}
+            value={convertDeliveryDate}
+            onChange={(event) => setConvertDeliveryDate(event.target.value)}
+          />
+        </label>
+
+        <label className="form-field">
+          <span>Prioridad</span>
+          <select
+            value={convertPriority}
+            onChange={(event) =>
+              setConvertPriority(
+                event.target.value as typeof convertPriority
+              )
+            }
           >
-            <form className="modal-card quote-convert-modal" onSubmit={convert}>
-              <div className="modal-head">
-                <div>
-                  <span>PRESUPUESTO → PEDIDO</span>
-                  <h3>
-                    Convertir P-{String(detailQuote.quote_number).padStart(4, "0")}
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  className="modal-close"
-                  onClick={() => setConvertOpen(false)}
-                >
-                  ×
-                </button>
-              </div>
+            {PRIORITIES.map(([value, label]) => (
+              <option value={value} key={value}>{label}</option>
+            ))}
+          </select>
+        </label>
 
-              <div className="quote-convert-summary">
-                <div>
-                  <span>Cliente</span>
-                  <strong>{detailQuote.client_name}</strong>
-                </div>
-                <div>
-                  <span>Total</span>
-                  <strong>{money(detailQuote.total)}</strong>
-                </div>
-                <div>
-                  <span>Ítems</span>
-                  <strong>{detailQuote.item_count}</strong>
-                </div>
-              </div>
+        <label className="form-field full-field">
+          <span>Notas para el pedido</span>
+          <textarea
+            rows={3}
+            value={convertNotes}
+            onChange={(event) => setConvertNotes(event.target.value)}
+            placeholder="Indicaciones de producción, entrega o seguimiento..."
+          />
+        </label>
+      </div>
 
-              <div className="client-form-grid">
-                <label className="form-field">
-                  <span>Fecha de entrega</span>
-                  <input
-                    type="date"
-                    min={today()}
-                    value={convertDeliveryDate}
-                    onChange={(event) => setConvertDeliveryDate(event.target.value)}
-                  />
-                </label>
+      <div className="quote-convert-info">
+        <Icon name="check" size={17} />
+        <p>
+          Se copiarán cliente, ítems, precios, descuento y total. El pedido
+          conservará el vínculo con este presupuesto y entrará al flujo de
+          Producción automáticamente.
+        </p>
+      </div>
 
-                <label className="form-field">
-                  <span>Prioridad</span>
-                  <select
-                    value={convertPriority}
-                    onChange={(event) =>
-                      setConvertPriority(
-                        event.target.value as typeof convertPriority
-                      )
-                    }
-                  >
-                    {PRIORITIES.map(([value, label]) => (
-                      <option value={value} key={value}>{label}</option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="form-field full-field">
-                  <span>Notas para el pedido</span>
-                  <textarea
-                    rows={3}
-                    value={convertNotes}
-                    onChange={(event) => setConvertNotes(event.target.value)}
-                    placeholder="Indicaciones de producción, entrega o seguimiento..."
-                  />
-                </label>
-              </div>
-
-              <div className="quote-convert-info">
-                <Icon name="check" size={17} />
-                <p>
-                  Se copiarán cliente, ítems, precios, descuento y total. El pedido
-                  conservará el vínculo con este presupuesto y entrará al flujo de
-                  Producción automáticamente.
-                </p>
-              </div>
-
-              <div className="modal-actions">
-                <button
-                  className="button modal-secondary"
-                  type="button"
-                  onClick={() => setConvertOpen(false)}
-                >
-                  Cancelar
-                </button>
-                <button className="button button-dark" type="submit" disabled={converting}>
-                  {converting ? "Convirtiendo..." : "Crear pedido"}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
+      <div className="modal-actions">
+        <button
+          className="button modal-secondary"
+          type="button"
+          onClick={closeConversion}
+        >
+          Cancelar
+        </button>
+        <button className="button button-dark" type="submit" disabled={converting}>
+          {converting ? "Convirtiendo..." : "Crear pedido"}
+        </button>
+      </div>
+    </form>
+  </div>
+)}
       </div>
     </>
   );

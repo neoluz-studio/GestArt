@@ -4280,6 +4280,12 @@ body.command-open {
 }
 
 
-/* El modal de pago se abre encima del panel del pedido (z-index 520).
+/* El modal de pago se abre encima del panel del pedido (z-index 520)
    Antes quedaba por debajo (500) y el botón "Registrar pago" parecía no hacer nada. */
 .modal-backdrop.payment-backdrop { z-index: 580; }
+
+.quote-convert-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+}
