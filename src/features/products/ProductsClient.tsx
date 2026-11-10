@@ -18,6 +18,7 @@ import { supabaseBrowser } from "@/lib/supabase/browser";
 import {
   adjustProductStock,
   createProduct,
+  demoProduct,
   listProductMovements,
   listProducts,
   setProductActive,
@@ -30,9 +31,9 @@ import {
 const UNITS = ["unidad", "docena", "kg", "g", "litro", "ml", "metro", "m²", "pack"];
 
 const DEMO_PRODUCTS: Product[] = [
-  { id: "d1", code: "PAN-001", name: "Pan francés", category: "Panificados", unit: "kg", sale_price: 2800, cost: 1100, stock: 24, min_stock: 8, track_stock: true, is_active: true, updated_at: new Date().toISOString() },
-  { id: "d2", code: "TOR-010", name: "Tortas decoradas", category: "Pastelería", unit: "unidad", sale_price: 18500, cost: 7200, stock: 3, min_stock: 5, track_stock: true, is_active: true, updated_at: new Date().toISOString() },
-  { id: "d3", code: "SRV-001", name: "Diseño de logo", category: "Servicios", unit: "unidad", sale_price: 45000, cost: 0, stock: 0, min_stock: 0, track_stock: false, is_active: true, updated_at: new Date().toISOString() }
+  demoProduct({ id: "d1", code: "PAN-001", name: "Pan francés", category: "Panificados", unit: "kg", sale_price: 2800, cost: 1100, stock: 24, min_stock: 8 }),
+  demoProduct({ id: "d2", code: "TOR-010", name: "Tortas decoradas", category: "Pastelería", unit: "unidad", sale_price: 18500, cost: 7200, stock: 3, min_stock: 5 }),
+  demoProduct({ id: "d3", code: "SRV-001", name: "Diseño de logo", category: "Servicios", unit: "unidad", sale_price: 45000, cost: 0, track_stock: false })
 ];
 
 type FormState = {
@@ -45,6 +46,7 @@ type FormState = {
   min_stock: string;
   initial_stock: string;
   track_stock: boolean;
+  is_for_sale: boolean;
 };
 
 const EMPTY_FORM: FormState = {
@@ -56,10 +58,14 @@ const EMPTY_FORM: FormState = {
   cost: "",
   min_stock: "0",
   initial_stock: "0",
-  track_stock: true
+  track_stock: true,
+  is_for_sale: true
 };
 
 function stockState(product: Product): "none" | "empty" | "low" | "ok" {
+  if (product.is_composite) {
+    return product.available !== null && product.available <= 0 ? "empty" : "none";
+  }
   if (!product.track_stock) return "none";
   if (product.stock <= 0) return "empty";
   if (product.stock <= product.min_stock) return "low";
@@ -143,9 +149,9 @@ export function ProductsClient() {
     const active = products.filter((p) => p.is_active);
     const lowStock = active.filter((p) => ["low", "empty"].includes(stockState(p))).length;
     const inventoryValue = active
-      .filter((p) => p.track_stock)
+      .filter((p) => p.track_stock && !p.is_composite)
       .reduce((sum, p) => sum + p.stock * p.cost, 0);
-    const withPrice = active.filter((p) => p.sale_price > 0);
+    const withPrice = active.filter((p) => p.is_for_sale && p.sale_price > 0);
     const avgMargin = withPrice.length
       ? withPrice.reduce((sum, p) => sum + ((p.sale_price - p.cost) / p.sale_price) * 100, 0) /
         withPrice.length
@@ -171,7 +177,8 @@ export function ProductsClient() {
       cost: String(product.cost),
       min_stock: String(product.min_stock),
       initial_stock: "0",
-      track_stock: product.track_stock
+      track_stock: product.track_stock,
+      is_for_sale: product.is_for_sale
     });
     setError("");
     setFormOpen(true);
@@ -188,7 +195,9 @@ export function ProductsClient() {
     const initialStock = parseNumber(form.initial_stock);
 
     if (!form.name.trim()) return setError("Ingresá el nombre del producto.");
-    if (salePrice <= 0) return setError("El precio de venta debe ser mayor a cero.");
+    if (form.is_for_sale && salePrice <= 0) {
+      return setError("El precio de venta debe ser mayor a cero (o marcá que es un insumo que no se vende).");
+    }
     if (cost < 0 || minStock < 0 || initialStock < 0) {
       return setError("Los valores no pueden ser negativos.");
     }
@@ -202,6 +211,7 @@ export function ProductsClient() {
       cost,
       min_stock: minStock,
       track_stock: form.track_stock,
+      is_for_sale: form.is_for_sale,
       initial_stock: initialStock
     };
 
@@ -229,6 +239,10 @@ export function ProductsClient() {
             min_stock: minStock,
             track_stock: form.track_stock,
             is_active: true,
+            is_for_sale: form.is_for_sale,
+            is_composite: false,
+            components: [],
+            available: null,
             updated_at: now
           },
           ...rows
@@ -430,16 +444,34 @@ export function ProductsClient() {
                       <tr key={p.id} className={!p.is_active ? "pos-row-inactive" : ""}>
                         <td>
                           <strong>{p.name}</strong>
-                          <small className="pos-sub">{p.code || "Sin código"} · {p.unit}</small>
+                          <small className="pos-sub">
+                            {p.code || "Sin código"} · {p.unit}
+                            {!p.is_for_sale ? " · Insumo (no se vende)" : ""}
+                            {p.is_composite
+                              ? ` · Lleva: ${p.components.map((c) => `${qty(c.quantity)} ${c.unit} ${c.name}`).join(", ")}`
+                              : ""}
+                          </small>
                         </td>
                         <td>{p.category || "—"}</td>
                         <td className="money"><strong>{money(p.sale_price)}</strong></td>
                         <td className="money">{money(p.cost)}</td>
                         <td>{marginOf(p).toFixed(0)}%</td>
-                        <td>{p.track_stock ? `${qty(p.stock)} ${p.unit}` : "—"}</td>
+                        <td>
+                          {p.is_composite
+                            ? p.available === null
+                              ? "—"
+                              : `Rinde ${qty(p.available)}`
+                            : p.track_stock
+                              ? `${qty(p.stock)} ${p.unit}`
+                              : "—"}
+                        </td>
                         <td>
                           {!p.is_active ? (
                             <span className="status-pill status-gray">Archivado</span>
+                          ) : p.is_composite ? (
+                            <span className={`status-pill ${state === "empty" ? "status-red" : "status-green"}`}>
+                              {state === "empty" ? "Faltan insumos" : "Compuesto"}
+                            </span>
                           ) : state === "empty" ? (
                             <span className="status-pill status-red">Agotado</span>
                           ) : state === "low" ? (
@@ -452,7 +484,7 @@ export function ProductsClient() {
                         </td>
                         <td>
                           <div className="row-actions">
-                            {p.track_stock && p.is_active && (
+                            {p.track_stock && !p.is_composite && p.is_active && (
                               <button className="button modal-secondary" type="button" onClick={() => void openStock(p)}>
                                 Stock
                               </button>
@@ -518,14 +550,30 @@ export function ProductsClient() {
                   <input inputMode="decimal" value={form.sale_price} onChange={(e) => setForm({ ...form, sale_price: e.target.value })} />
                 </label>
                 <label className="form-field">
-                  <span>Costo</span>
-                  <input inputMode="decimal" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} />
+                  <span>{editing?.is_composite ? "Costo (se calcula con sus componentes)" : "Costo"}</span>
+                  <input
+                    inputMode="decimal"
+                    value={editing?.is_composite ? String(editing.cost) : form.cost}
+                    disabled={Boolean(editing?.is_composite)}
+                    onChange={(e) => setForm({ ...form, cost: e.target.value })}
+                  />
                 </label>
                 <label className="form-field">
                   <span>Unidad</span>
                   <select value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })}>
                     {UNITS.map((u) => <option value={u} key={u}>{u}</option>)}
                   </select>
+                </label>
+                <label className="form-field pos-check-field">
+                  <span>Se vende al público</span>
+                  <span className="pos-check">
+                    <input
+                      type="checkbox"
+                      checked={form.is_for_sale}
+                      onChange={(e) => setForm({ ...form, is_for_sale: e.target.checked })}
+                    />
+                    Aparece en Ventas (destildalo si es un insumo)
+                  </span>
                 </label>
                 <label className="form-field pos-check-field">
                   <span>Control de stock</span>

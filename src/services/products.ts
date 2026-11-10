@@ -1,5 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+export type ProductComponent = {
+  component_id: string;
+  name: string;
+  unit: string;
+  quantity: number;
+  unit_cost: number;
+  stock: number;
+  track_stock: boolean;
+};
+
 export type Product = {
   id: string;
   code: string | null;
@@ -12,6 +22,13 @@ export type Product = {
   min_stock: number;
   track_stock: boolean;
   is_active: boolean;
+  /** false = insumo: no aparece en el punto de venta. */
+  is_for_sale: boolean;
+  /** true = al venderlo se descuentan sus componentes. */
+  is_composite: boolean;
+  components: ProductComponent[];
+  /** Unidades que se pueden vender con el stock actual (null = sin límite). */
+  available: number | null;
   updated_at: string;
 };
 
@@ -24,6 +41,7 @@ export type ProductInput = {
   cost: number;
   min_stock: number;
   track_stock: boolean;
+  is_for_sale: boolean;
   /** Sólo al crear: stock inicial. */
   initial_stock?: number;
 };
@@ -52,8 +70,57 @@ function mapProduct(row: Record<string, unknown>): Product {
     min_stock: num(row.min_stock),
     track_stock: Boolean(row.track_stock),
     is_active: Boolean(row.is_active),
+    is_for_sale: row.is_for_sale === undefined ? true : Boolean(row.is_for_sale),
+    is_composite: Boolean(row.is_composite),
+    components: [],
+    available: null,
     updated_at: String(row.updated_at ?? "")
   };
+}
+
+/** Unidades vendibles de un producto ahora mismo (null = sin límite). */
+export function availableOf(product: Product): number | null {
+  if (product.is_composite) return product.available;
+  return product.track_stock ? product.stock : null;
+}
+
+/** Calcula costo y disponibilidad de los productos compuestos a partir de sus componentes. */
+export function resolveComposition(
+  products: Product[],
+  links: { product_id: string; component_id: string; quantity: number }[]
+): Product[] {
+  const byId = new Map(products.map((p) => [p.id, p]));
+
+  return products.map((product) => {
+    if (!product.is_composite) return product;
+
+    const components: ProductComponent[] = links
+      .filter((link) => link.product_id === product.id)
+      .map((link) => {
+        const base = byId.get(link.component_id);
+        return {
+          component_id: link.component_id,
+          name: base?.name ?? "Producto eliminado",
+          unit: base?.unit ?? "unidad",
+          quantity: link.quantity,
+          unit_cost: base?.cost ?? 0,
+          stock: base?.stock ?? 0,
+          track_stock: base?.track_stock ?? false
+        };
+      });
+
+    const cost = components.reduce((sum, c) => sum + c.unit_cost * c.quantity, 0);
+    const limits = components
+      .filter((c) => c.track_stock && c.quantity > 0)
+      .map((c) => Math.floor((c.stock + 1e-9) / c.quantity));
+
+    return {
+      ...product,
+      components,
+      cost: Math.round(cost * 100) / 100,
+      available: limits.length ? Math.min(...limits) : null
+    };
+  });
 }
 
 export async function listProducts(
@@ -61,24 +128,54 @@ export async function listProducts(
   companyId: string,
   options: { includeArchived?: boolean } = {}
 ): Promise<Product[]> {
-  let query = supabase
+  // Se traen todos (también archivados) para poder resolver componentes.
+  const { data, error } = await supabase
     .from("products")
     .select("*")
     .eq("company_id", companyId)
     .order("name");
-
-  if (!options.includeArchived) query = query.eq("is_active", true);
-
-  const { data, error } = await query;
   if (error) throw error;
-  return (data ?? []).map((row) => mapProduct(row as Record<string, unknown>));
+
+  const all = (data ?? []).map((row) => mapProduct(row as Record<string, unknown>));
+
+  let links: { product_id: string; component_id: string; quantity: number }[] = [];
+  if (all.some((p) => p.is_composite)) {
+    const { data: linkRows, error: linkError } = await supabase
+      .from("product_components")
+      .select("product_id,component_id,quantity")
+      .eq("company_id", companyId);
+    if (linkError) throw linkError;
+    links = (linkRows ?? []).map((row) => ({
+      product_id: String(row.product_id),
+      component_id: String(row.component_id),
+      quantity: num(row.quantity)
+    }));
+  }
+
+  const resolved = resolveComposition(all, links);
+  return options.includeArchived ? resolved : resolved.filter((p) => p.is_active);
+}
+
+/** Define los componentes de un producto (lista vacía = deja de ser compuesto). */
+export async function setProductComponents(
+  supabase: SupabaseClient,
+  companyId: string,
+  productId: string,
+  components: { component_id: string; quantity: number }[]
+): Promise<void> {
+  const { error } = await supabase.rpc("set_product_components", {
+    p_company_id: companyId,
+    p_product_id: productId,
+    p_components: components
+  });
+  if (error) throw error;
 }
 
 export async function createProduct(
   supabase: SupabaseClient,
   companyId: string,
   input: ProductInput
-): Promise<void> {
+): Promise<string> {
   const { data, error } = await supabase
     .from("products")
     .insert({
@@ -90,7 +187,8 @@ export async function createProduct(
       sale_price: input.sale_price,
       cost: input.cost,
       min_stock: input.min_stock,
-      track_stock: input.track_stock
+      track_stock: input.track_stock,
+      is_for_sale: input.is_for_sale
     })
     .select("id")
     .single();
@@ -101,6 +199,7 @@ export async function createProduct(
   if (input.track_stock && initial > 0 && data?.id) {
     await adjustProductStock(supabase, companyId, data.id, "in", initial, "Stock inicial");
   }
+  return String(data.id);
 }
 
 export async function updateProduct(
@@ -119,7 +218,8 @@ export async function updateProduct(
       sale_price: input.sale_price,
       cost: input.cost,
       min_stock: input.min_stock,
-      track_stock: input.track_stock
+      track_stock: input.track_stock,
+      is_for_sale: input.is_for_sale
     })
     .eq("id", productId)
     .eq("company_id", companyId);
@@ -190,4 +290,27 @@ function friendlyProductError(error: { message: string; code?: string }) {
     return new Error("Ya existe un producto con ese nombre o código.");
   }
   return new Error(error.message);
+}
+
+/** Producto de ejemplo para el modo demo. */
+export function demoProduct(
+  base: Partial<Product> & Pick<Product, "id" | "name">
+): Product {
+  return {
+    sale_price: 0,
+    code: null,
+    category: null,
+    unit: "unidad",
+    cost: 0,
+    stock: 0,
+    min_stock: 0,
+    track_stock: true,
+    is_active: true,
+    is_for_sale: true,
+    is_composite: false,
+    components: [],
+    available: null,
+    updated_at: new Date().toISOString(),
+    ...base
+  };
 }

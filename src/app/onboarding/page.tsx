@@ -13,6 +13,7 @@ const INDUSTRIES = [
   ["construccion", "Construcción"],
   ["servicios", "Servicios"],
   ["comercio", "Comercio"],
+  ["bar", "Bar / restaurante"],
   ["gastronomia", "Gastronomía / panadería"],
   ["industria", "Industria"],
   ["otro", "Otro"]
@@ -21,6 +22,7 @@ const INDUSTRIES = [
 // Módulos que se preseleccionan según el rubro (se pueden cambiar después).
 const INDUSTRY_PRESETS: Record<string, string[]> = {
   grafica: ["clients", "quotes", "orders", "production", "materials", "cash", "reports", "history"],
+  bar: ["products", "sales", "recipes", "cash", "reports", "history"],
   gastronomia: ["products", "sales", "recipes", "cash", "reports", "history"],
   comercio: ["clients", "products", "sales", "cash", "reports", "history"],
   servicios: ["clients", "quotes", "orders", "cash", "reports", "history"],
@@ -248,9 +250,27 @@ export default function OnboardingPage() {
               <span className="module-kicker">MÓDULOS</span>
               <h1>¿Qué querés usar?</h1>
               <p>
-                Activá solamente lo necesario. Podrás cambiar nombres, orden e
-                iconos más adelante.
+                Dejamos marcado lo que suele usar tu rubro. Activá solamente lo
+                necesario; podés cambiarlo cuando quieras desde Configuración.
               </p>
+              <div className="pos-module-actions">
+                <button
+                  className="button modal-secondary"
+                  type="button"
+                  onClick={() => setSelectedModules(MODULES.map((module) => module[0]))}
+                >
+                  Activar todos
+                </button>
+                {INDUSTRY_PRESETS[industry] ? (
+                  <button
+                    className="button modal-secondary"
+                    type="button"
+                    onClick={() => setSelectedModules(INDUSTRY_PRESETS[industry])}
+                  >
+                    Solo los de mi rubro
+                  </button>
+                ) : null}
+              </div>
               <div className="module-choice-grid">
                 {MODULES.map(([code, label]) => (
                   <label className="module-choice" key={code}>

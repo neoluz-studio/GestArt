@@ -5,6 +5,7 @@ import { CompactMetric } from "@/components/Metric";
 import { Icon } from "@/components/Icon";
 import { ModuleGate } from "@/components/ModuleGate";
 import { Topbar } from "@/components/Topbar";
+import { CompositePanel } from "@/features/recipes/CompositePanel";
 import { useTenant } from "@/contexts/TenantContext";
 import { demoMode } from "@/lib/runtime";
 import { errorMessage, makeMoney, parseNumber } from "@/lib/pos-format";
@@ -140,6 +141,7 @@ export function RecipesClient() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
+  const [tab, setTab] = useState<"cost" | "composite">("cost");
 
   const load = useCallback(async () => {
     if (demoMode || !supabaseBrowser || !currentCompany) return;
@@ -260,6 +262,19 @@ export function RecipesClient() {
       <Topbar eyebrow="Comercio" title="Recetas y costeo" />
 
       <div className="page-content page-stack pos-page">
+        <div className="pos-tabs" role="tablist" style={{ width: "fit-content" }}>
+          <button type="button" role="tab" aria-selected={tab === "cost"} className={tab === "cost" ? "active" : ""} onClick={() => setTab("cost")}>
+            Costeo de recetas
+          </button>
+          <button type="button" role="tab" aria-selected={tab === "composite"} className={tab === "composite" ? "active" : ""} onClick={() => setTab("composite")}>
+            Productos compuestos
+          </button>
+        </div>
+
+        {tab === "composite" ? (
+          <CompositePanel />
+        ) : (
+          <>
         <section className="module-intro">
           <div className="module-copy">
             <span className="module-kicker">COSTEO</span>
@@ -477,6 +492,8 @@ export function RecipesClient() {
               </button>
             </div>
           </section>
+        )}
+          </>
         )}
       </div>
     </ModuleGate>

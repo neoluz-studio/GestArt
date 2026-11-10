@@ -70,3 +70,6 @@
   .pos-layout { grid-template-columns: 1fr; }
   .pos-cart { position: static; }
 }
+
+/* Módulos: selector "activar todos" del onboarding */
+.pos-module-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px; }

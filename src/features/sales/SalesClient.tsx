@@ -17,7 +17,7 @@ import {
 } from "@/lib/pos-format";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { listPaymentMethods, type PaymentMethod } from "@/services/cash";
-import { listProducts, type Product } from "@/services/products";
+import { availableOf, demoProduct, listProducts, type Product } from "@/services/products";
 import {
   cancelSale,
   cartDiscountAmount,
@@ -36,9 +36,9 @@ type CartLine = {
 };
 
 const DEMO_PRODUCTS: Product[] = [
-  { id: "d1", code: "PAN-001", name: "Pan francés", category: "Panificados", unit: "kg", sale_price: 2800, cost: 1100, stock: 24, min_stock: 8, track_stock: true, is_active: true, updated_at: "" },
-  { id: "d2", code: "TOR-010", name: "Tortas decoradas", category: "Pastelería", unit: "unidad", sale_price: 18500, cost: 7200, stock: 3, min_stock: 5, track_stock: true, is_active: true, updated_at: "" },
-  { id: "d3", code: "SRV-001", name: "Diseño de logo", category: "Servicios", unit: "unidad", sale_price: 45000, cost: 0, stock: 0, min_stock: 0, track_stock: false, is_active: true, updated_at: "" }
+  demoProduct({ id: "d1", code: "PAN-001", name: "Pan francés", category: "Panificados", unit: "kg", sale_price: 2800, cost: 1100, stock: 24, min_stock: 8 }),
+  demoProduct({ id: "d2", code: "TOR-010", name: "Tortas decoradas", category: "Pastelería", unit: "unidad", sale_price: 18500, cost: 7200, stock: 3, min_stock: 5 }),
+  demoProduct({ id: "d3", code: "SRV-001", name: "Diseño de logo", category: "Servicios", unit: "unidad", sale_price: 45000, cost: 0, track_stock: false })
 ];
 const DEMO_METHODS: PaymentMethod[] = [
   { id: "m1", code: "cash", name: "Efectivo" },
@@ -130,7 +130,7 @@ export function SalesClient() {
   const visibleProducts = useMemo(() => {
     const term = search.trim().toLowerCase();
     return products
-      .filter((p) => p.is_active)
+      .filter((p) => p.is_active && p.is_for_sale)
       .filter((p) =>
         !term ? true : [p.name, p.code, p.category].some((v) => (v ?? "").toLowerCase().includes(term))
       )
@@ -143,7 +143,8 @@ export function SalesClient() {
     setCart((lines) => {
       const existing = lines.find((l) => l.product.id === product.id);
       const current = existing?.quantity ?? 0;
-      if (product.track_stock && current + 1 > product.stock) {
+      const avail = availableOf(product);
+      if (avail !== null && current + 1 > avail) {
         setError(`No hay más stock de ${product.name}.`);
         return lines;
       }
@@ -161,7 +162,7 @@ export function SalesClient() {
       lines
         .map((l) => {
           if (l.product.id !== productId) return l;
-          const max = l.product.track_stock ? l.product.stock : Infinity;
+          const max = availableOf(l.product) ?? Infinity;
           return { ...l, quantity: Math.min(Math.max(value, 0), max) };
         })
         .filter((l) => l.quantity > 0)
@@ -366,7 +367,8 @@ export function SalesClient() {
               ) : (
                 <div className="pos-grid">
                   {visibleProducts.map((p) => {
-                    const out = p.track_stock && p.stock <= 0;
+                    const avail = availableOf(p);
+                    const out = avail !== null && avail <= 0;
                     return (
                       <button
                         type="button"
@@ -378,7 +380,13 @@ export function SalesClient() {
                         <strong>{p.name}</strong>
                         <span className="pos-price">{money(p.sale_price)}</span>
                         <small>
-                          {out ? "SIN STOCK" : p.track_stock ? `Stock: ${qtyFmt(p.stock)} ${p.unit}` : p.unit}
+                          {out
+                            ? "SIN STOCK"
+                            : p.is_composite
+                              ? avail === null ? p.unit : `Podés vender: ${qtyFmt(avail)}`
+                              : p.track_stock
+                                ? `Stock: ${qtyFmt(p.stock)} ${p.unit}`
+                                : p.unit}
                         </small>
                       </button>
                     );
