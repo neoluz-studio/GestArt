@@ -118,6 +118,7 @@ quote_number: null,
 
 function sourceLabel(source: string) {
   if (source === "order_payment") return "Pedido";
+  if (source === "sale") return "Venta";
   if (source === "inventory_purchase") return "Inventario";
   if (source === "reversal") return "Reversión";
   return "Manual";
@@ -159,6 +160,8 @@ export function CashClient() {
   );
   const [suppliers, setSuppliers] = useState<SupplierLookup[]>([]);
 const [closures, setClosures] = useState<CashClosure[]>([]);
+const [closureFrom, setClosureFrom] = useState("");
+const [closureTo, setClosureTo] = useState("");
 
 const [clients, setClients] = useState<ClientSummary[]>([]);
 const [clientSearch, setClientSearch] = useState("");
@@ -535,6 +538,16 @@ setClients(clientRows);
   }
 
   const closureDifference = closurePreview ? actualBalance - closurePreview.expected_balance : 0;
+  const closureDay = (iso: string) => {
+    const date = new Date(iso);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  };
+  const filteredClosures = closures.filter((closure) => {
+    const day = closureDay(closure.closed_at);
+    if (closureFrom && day < closureFrom) return false;
+    if (closureTo && day > closureTo) return false;
+    return true;
+  });
   const totalMethods = useMemo(
     () => methodBalances.reduce((sum, row) => sum + row.balance, 0),
     [methodBalances]
@@ -833,11 +846,29 @@ setClients(clientRows);
               </div>
             </div>
 
+            <div className="pos-date-filters" style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "0 0 12px" }}>
+              <label className="pos-date">
+                <span>Desde</span>
+                <input type="date" value={closureFrom} max={closureTo || undefined} onChange={(event) => setClosureFrom(event.target.value)} />
+              </label>
+              <label className="pos-date">
+                <span>Hasta</span>
+                <input type="date" value={closureTo} min={closureFrom || undefined} onChange={(event) => setClosureTo(event.target.value)} />
+              </label>
+              {(closureFrom || closureTo) && (
+                <button className="button modal-secondary" type="button" onClick={() => { setClosureFrom(""); setClosureTo(""); }}>
+                  Ver todos
+                </button>
+              )}
+            </div>
+
             {closures.length === 0 ? (
               <p className="muted-small">Todavía no se realizó ningún cierre.</p>
+            ) : filteredClosures.length === 0 ? (
+              <p className="muted-small">No hay cierres en ese período.</p>
             ) : (
               <div className="cash-closure-list">
-                {closures.slice(0, 8).map((closure) => (
+                {filteredClosures.slice(0, closureFrom || closureTo ? 100 : 8).map((closure) => (
                   <div className="cash-closure-row" key={closure.id}>
                     <div>
                       <strong>{dateTime(closure.closed_at)}</strong>

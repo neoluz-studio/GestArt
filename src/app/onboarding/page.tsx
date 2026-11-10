@@ -13,9 +13,19 @@ const INDUSTRIES = [
   ["construccion", "Construcción"],
   ["servicios", "Servicios"],
   ["comercio", "Comercio"],
+  ["gastronomia", "Gastronomía / panadería"],
   ["industria", "Industria"],
   ["otro", "Otro"]
 ];
+
+// Módulos que se preseleccionan según el rubro (se pueden cambiar después).
+const INDUSTRY_PRESETS: Record<string, string[]> = {
+  grafica: ["clients", "quotes", "orders", "production", "materials", "cash", "reports", "history"],
+  gastronomia: ["products", "sales", "recipes", "cash", "reports", "history"],
+  comercio: ["clients", "products", "sales", "cash", "reports", "history"],
+  servicios: ["clients", "quotes", "orders", "cash", "reports", "history"],
+  industria: ["clients", "orders", "production", "materials", "products", "cash", "reports", "history"]
+};
 
 const MODULES = [
   ["clients", "Clientes", true],
@@ -23,6 +33,9 @@ const MODULES = [
   ["orders", "Pedidos", true],
   ["production", "Producción", false],
   ["materials", "Materiales", false],
+  ["products", "Productos", false],
+  ["sales", "Ventas (punto de venta)", false],
+  ["recipes", "Recetas y costeo", false],
   ["cash", "Caja y pagos", true],
   ["reports", "Reportes", true],
   ["history", "Historial", true]
@@ -194,7 +207,11 @@ export default function OnboardingPage() {
                     className={`industry-option ${
                       industry === value ? "selected" : ""
                     }`}
-                    onClick={() => setIndustry(value)}
+                    onClick={() => {
+                      setIndustry(value);
+                      const preset = INDUSTRY_PRESETS[value];
+                      if (preset) setSelectedModules(preset);
+                    }}
                   >
                     <strong>{label}</strong>
                     <span>{value}</span>

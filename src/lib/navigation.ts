@@ -11,6 +11,14 @@ export const navigation = [
     ]
   },
   {
+    section: "Comercio",
+    items: [
+      { code: "sales", href: "/ventas", label: "Ventas", icon: "money" as const },
+      { code: "products", href: "/productos", label: "Productos", icon: "boxes" as const },
+      { code: "recipes", href: "/recetas", label: "Recetas y costeo", icon: "database" as const }
+    ]
+  },
+  {
     section: "Administración",
     items: [
       { code: "cash", href: "/caja", label: "Caja y pagos", icon: "cash" as const },

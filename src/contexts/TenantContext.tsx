@@ -63,6 +63,9 @@ export type TenantSettings = {
     show_payment_information?: boolean;
   } | null;
   dashboard_options?: Record<string, boolean> | null;
+  cash_auto_close_enabled?: boolean | null;
+  cash_open_time?: string | null;
+  cash_close_time?: string | null;
 };
 
 export type TenantModule = {

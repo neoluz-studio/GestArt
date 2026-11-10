@@ -1,0 +1,72 @@
+/* GestArt — módulos Productos / Ventas / Recetas (reutiliza variables de base.css) */
+
+.pos-page .pos-pad { padding: 18px; }
+.pos-page .pos-sub { display: block; color: var(--text-soft); font-size: 9px; margin-top: 2px; }
+.pos-page .pos-row-inactive { opacity: .55; }
+.pos-page .pos-positive { color: var(--success); }
+.pos-page .pos-negative { color: var(--danger); }
+.pos-page .pos-warn { display: block; margin-top: 4px; color: var(--danger); font-size: 9px; font-weight: 700; }
+.pos-page .pos-h4 { margin: 18px 0 8px; font-size: 12px; }
+
+.pos-page .pos-check { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-soft); white-space: nowrap; }
+.pos-page .pos-check input { width: 15px; height: 15px; accent-color: var(--primary); }
+.pos-page .pos-check-field .pos-check { min-height: 42px; }
+
+.pos-page .pos-movement-list { display: grid; gap: 6px; margin-top: 8px; }
+.pos-page .pos-movement-row { display: grid; grid-template-columns: 1.2fr 1.6fr .6fr .6fr; gap: 8px; font-size: 10px; color: var(--text-soft); }
+
+/* Pestañas */
+.pos-tabs { display: inline-flex; padding: 4px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-soft); }
+.pos-tabs button { min-height: 34px; padding: 0 16px; border: 0; border-radius: 9px; background: transparent; color: var(--text-soft); font-size: 11px; font-weight: 800; cursor: pointer; }
+.pos-tabs button.active { background: var(--secondary, #17151d); color: #fff; }
+
+/* Punto de venta */
+.pos-layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr); gap: 14px; align-items: start; }
+.pos-products { padding: 14px; display: grid; gap: 12px; }
+.pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.pos-product { display: grid; gap: 4px; text-align: left; padding: 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-soft); color: var(--text); cursor: pointer; transition: transform .12s, border-color .12s; }
+.pos-product:hover:not(.disabled) { border-color: var(--primary); transform: translateY(-1px); }
+.pos-product strong { font-size: 11px; }
+.pos-product .pos-price { color: var(--primary); font-weight: 800; font-size: 13px; }
+.pos-product small { color: var(--text-soft); font-size: 9px; }
+.pos-product.disabled { opacity: .5; cursor: not-allowed; }
+
+.pos-cart { padding: 14px; display: grid; gap: 12px; position: sticky; top: 12px; }
+.pos-cart h3 { margin: 0; font-size: 13px; }
+.pos-lines { display: grid; gap: 10px; max-height: 340px; overflow: auto; }
+.pos-line { padding: 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-soft); display: grid; gap: 8px; }
+.pos-line-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 11px; }
+.pos-line-body { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pos-line-total { margin-left: auto; font-size: 12px; }
+.pos-qty { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: 9px; background: #fff; overflow: hidden; }
+.pos-qty button { width: 28px; height: 30px; border: 0; background: transparent; font-size: 14px; cursor: pointer; color: var(--text); }
+.pos-qty input { width: 44px; height: 30px; border: 0; text-align: center; font-size: 11px; background: transparent; color: var(--text); outline: 0; }
+.pos-disc { display: inline-flex; align-items: center; gap: 4px; }
+.pos-disc input { width: 64px; height: 30px; padding: 0 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 10px; background: #fff; color: var(--text); }
+.pos-disc select { height: 30px; border: 1px solid var(--border); border-radius: 8px; background: #fff; font-size: 10px; color: var(--text); }
+.pos-cart-disc { justify-content: space-between; width: 100%; font-size: 10px; color: var(--text-soft); }
+
+.pos-summary { display: grid; gap: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.pos-sum-row { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; color: var(--text-soft); }
+.pos-sum-row strong { color: var(--text); }
+.pos-total { padding-top: 8px; border-top: 1px solid var(--border); font-size: 15px; color: var(--text); }
+.pos-charge { width: 100%; min-height: 46px; font-size: 13px; }
+.pos-detail { display: grid; gap: 8px; padding: 4px 0 12px; }
+
+/* Historial */
+.pos-date-filters { flex-wrap: wrap; }
+.pos-date { display: grid; gap: 3px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--text-soft); }
+.pos-date input { height: 38px; padding: 0 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-soft); color: var(--text); font-size: 11px; text-transform: none; letter-spacing: 0; }
+
+/* Recetas */
+.pos-recipe-editor { padding: 16px; display: grid; gap: 12px; }
+.pos-ingredients input, .pos-ingredients select { min-height: 36px; padding: 0 8px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface-soft); color: var(--text); font-size: 11px; width: 100%; }
+.pos-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; min-width: 150px; }
+.pos-recipe-totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; padding: 12px; border-radius: 14px; background: var(--primary-light); }
+.pos-recipe-totals span { display: block; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--text-soft); }
+.pos-recipe-totals strong { font-size: 15px; }
+
+@media (max-width: 960px) {
+  .pos-layout { grid-template-columns: 1fr; }
+  .pos-cart { position: static; }
+}

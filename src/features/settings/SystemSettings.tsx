@@ -49,6 +49,9 @@ export function SystemSettings() {
   const [currency, setCurrency] = useState("ARS");
   const [locale, setLocale] = useState("es-AR");
   const [timezone, setTimezone] = useState("America/Argentina/Buenos_Aires");
+  const [cashAutoClose, setCashAutoClose] = useState(false);
+  const [cashOpenTime, setCashOpenTime] = useState("09:00");
+  const [cashCloseTime, setCashCloseTime] = useState("00:00");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -58,6 +61,9 @@ export function SystemSettings() {
     setCurrency(settings?.currency || "ARS");
     setLocale(settings?.locale || "es-AR");
     setTimezone(settings?.timezone || "America/Argentina/Buenos_Aires");
+    setCashAutoClose(Boolean(settings?.cash_auto_close_enabled));
+    setCashOpenTime(String(settings?.cash_open_time || "09:00").slice(0, 5));
+    setCashCloseTime(String(settings?.cash_close_time || "00:00").slice(0, 5));
   }, [currentCompany, settings]);
 
   async function save() {
@@ -83,7 +89,10 @@ export function SystemSettings() {
             company_id: currentCompany.id,
             currency,
             locale,
-            timezone
+            timezone,
+            cash_auto_close_enabled: cashAutoClose,
+            cash_open_time: cashOpenTime || "09:00",
+            cash_close_time: cashCloseTime || "00:00"
           })
       ]);
 
@@ -157,6 +166,56 @@ export function SystemSettings() {
             }).format(125000)}
             {" · "}
             {new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date())}
+          </span>
+        </div>
+      </div>
+
+      <h3 style={{ marginTop: 26 }}>Horario de caja</h3>
+      <p>
+        La caja puede cerrarse sola todos los días. El cierre queda registrado con el saldo
+        esperado y lo podés revisar en Caja y pagos. Si alguien se olvida de cerrar, no se
+        pierde nada: las ventas siguen disponibles filtrando por fecha.
+      </p>
+
+      <div className="settings-grid">
+        <div className="field">
+          <label>Cierre automático</label>
+          <select
+            value={cashAutoClose ? "yes" : "no"}
+            onChange={(event) => setCashAutoClose(event.target.value === "yes")}
+          >
+            <option value="no">Desactivado (cierro la caja yo)</option>
+            <option value="yes">Activado</option>
+          </select>
+        </div>
+
+        <div className="field">
+          <label>Apertura de caja</label>
+          <input
+            type="time"
+            value={cashOpenTime}
+            onChange={(event) => setCashOpenTime(event.target.value)}
+          />
+        </div>
+
+        <div className="field">
+          <label>Cierre automático a las</label>
+          <input
+            type="time"
+            value={cashCloseTime}
+            disabled={!cashAutoClose}
+            onChange={(event) => setCashCloseTime(event.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="settings-system-note">
+        <Icon name="clock" size={17} />
+        <div>
+          <strong>Se usa la zona horaria de arriba</strong>
+          <span>
+            Con 00:00 la caja cierra a medianoche. Revisamos cada 10 minutos, así que el cierre
+            puede registrarse con unos minutos de demora, pero siempre con la hora programada.
           </span>
         </div>
       </div>

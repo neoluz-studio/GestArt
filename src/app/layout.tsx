@@ -4,6 +4,7 @@ import "@/styles/base.css";
 import "@/styles/pedidos.css";
 import "@/styles/presupuestos.css";
 import "@/styles/gestart.css";
+import "@/styles/pos.css";
 
 export const metadata: Metadata = {
   title: "GestArt | Gestión inteligente",
