@@ -1,5 +1,6 @@
 "use client";
 
+import { NumberInput } from "@/components/NumberInput";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CompactMetric } from "@/components/Metric";
@@ -1019,18 +1020,7 @@ async function convert(event: FormEvent) {
 
                   <label className="form-field">
                     <span>Descuento total</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={form.discount}
-                      onChange={(event) =>
-                        setForm({
-                          ...form,
-                          discount: Number(event.target.value)
-                        })
-                      }
-                    />
+                    <NumberInput value={form.discount} onValueChange={(_, n) => setForm({ ...form, discount: n })} />
                   </label>
                 </div>
 
@@ -1083,38 +1073,12 @@ async function convert(event: FormEvent) {
 
                           <label className="form-field">
                             <span>Cantidad</span>
-                            <input
-                              type="number"
-                              min="0.001"
-                              step="0.001"
-                              value={item.quantity}
-                              onChange={(event) => {
-                                const items = [...form.items];
-                                items[index] = {
-                                  ...items[index],
-                                  quantity: Number(event.target.value)
-                                };
-                                setForm({ ...form, items });
-                              }}
-                            />
+                            <NumberInput decimals={3} value={item.quantity} onValueChange={(_, n) => { const items = [...form.items]; items[index] = { ...items[index], quantity: n }; setForm({ ...form, items }); }} />
                           </label>
 
                           <label className="form-field">
                             <span>Precio unitario</span>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={item.unit_price}
-                              onChange={(event) => {
-                                const items = [...form.items];
-                                items[index] = {
-                                  ...items[index],
-                                  unit_price: Number(event.target.value)
-                                };
-                                setForm({ ...form, items });
-                              }}
-                            />
+                            <NumberInput value={item.unit_price} onValueChange={(_, n) => { const items = [...form.items]; items[index] = { ...items[index], unit_price: n }; setForm({ ...form, items }); }} />
                           </label>
 
                           <div className="quote-item-total">

@@ -8,6 +8,11 @@ export type ProductComponent = {
   unit_cost: number;
   stock: number;
   track_stock: boolean;
+  /** 'portion' = la cantidad está expresada en porciones (vasos) de un envase. */
+  measure: "unit" | "portion";
+  portions_per_unit: number | null;
+  portion_name: string | null;
+  portions_used: number;
 };
 
 export type Product = {
@@ -26,6 +31,11 @@ export type Product = {
   is_for_sale: boolean;
   /** true = al venderlo se descuentan sus componentes. */
   is_composite: boolean;
+  /** Cuántas porciones (vasos, tragos) rinde cada unidad (botella, caja, barril). */
+  portions_per_unit: number | null;
+  portion_name: string | null;
+  /** Porciones ya servidas del envase que está en uso. */
+  portions_used: number;
   components: ProductComponent[];
   /** Unidades que se pueden vender con el stock actual (null = sin límite). */
   available: number | null;
@@ -42,6 +52,8 @@ export type ProductInput = {
   min_stock: number;
   track_stock: boolean;
   is_for_sale: boolean;
+  portions_per_unit?: number | null;
+  portion_name?: string;
   /** Sólo al crear: stock inicial. */
   initial_stock?: number;
 };
@@ -72,6 +84,9 @@ function mapProduct(row: Record<string, unknown>): Product {
     is_active: Boolean(row.is_active),
     is_for_sale: row.is_for_sale === undefined ? true : Boolean(row.is_for_sale),
     is_composite: Boolean(row.is_composite),
+    portions_per_unit: row.portions_per_unit == null ? null : num(row.portions_per_unit),
+    portion_name: (row.portion_name as string | null) ?? null,
+    portions_used: num(row.portions_used),
     components: [],
     available: null,
     updated_at: String(row.updated_at ?? "")
@@ -87,7 +102,12 @@ export function availableOf(product: Product): number | null {
 /** Calcula costo y disponibilidad de los productos compuestos a partir de sus componentes. */
 export function resolveComposition(
   products: Product[],
-  links: { product_id: string; component_id: string; quantity: number }[]
+  links: {
+    product_id: string;
+    component_id: string;
+    quantity: number;
+    measure?: "unit" | "portion";
+  }[]
 ): Product[] {
   const byId = new Map(products.map((p) => [p.id, p]));
 
@@ -98,21 +118,35 @@ export function resolveComposition(
       .filter((link) => link.product_id === product.id)
       .map((link) => {
         const base = byId.get(link.component_id);
+        const portions = base?.portions_per_unit ?? null;
+        const measure = link.measure === "portion" && portions ? "portion" : "unit";
+        const baseCost = base?.cost ?? 0;
         return {
           component_id: link.component_id,
           name: base?.name ?? "Producto eliminado",
           unit: base?.unit ?? "unidad",
           quantity: link.quantity,
-          unit_cost: base?.cost ?? 0,
+          // costo de cada "unidad de cantidad": por porción o por unidad del producto
+          unit_cost: measure === "portion" && portions ? baseCost / portions : baseCost,
           stock: base?.stock ?? 0,
-          track_stock: base?.track_stock ?? false
-        };
+          track_stock: base?.track_stock ?? false,
+          measure,
+          portions_per_unit: portions,
+          portion_name: base?.portion_name ?? null,
+          portions_used: base?.portions_used ?? 0
+        } as ProductComponent;
       });
 
     const cost = components.reduce((sum, c) => sum + c.unit_cost * c.quantity, 0);
     const limits = components
       .filter((c) => c.track_stock && c.quantity > 0)
-      .map((c) => Math.floor((c.stock + 1e-9) / c.quantity));
+      .map((c) => {
+        const remaining =
+          c.measure === "portion" && c.portions_per_unit
+            ? c.stock * c.portions_per_unit - c.portions_used
+            : c.stock;
+        return Math.max(0, Math.floor((remaining + 1e-9) / c.quantity));
+      });
 
     return {
       ...product,
@@ -121,6 +155,58 @@ export function resolveComposition(
       available: limits.length ? Math.min(...limits) : null
     };
   });
+}
+
+// ---- Unidades y conversiones para armar composiciones ----
+
+export type UnitOption = { value: string; label: string };
+
+const UNIT_FAMILY: Record<string, string[]> = {
+  litro: ["litro", "ml", "cl"],
+  ml: ["ml", "litro", "cl"],
+  kg: ["kg", "g"],
+  g: ["g", "kg"]
+};
+
+const TO_BASE: Record<string, number> = { litro: 1000, ml: 1, cl: 10, kg: 1000, g: 1 };
+
+/** Unidades en las que se puede cargar la cantidad de un componente. */
+export function unitOptions(component: Product): UnitOption[] {
+  const family = UNIT_FAMILY[component.unit] ?? [component.unit];
+  const options: UnitOption[] = family.map((unit) => ({
+    value: unit,
+    label: unit === component.unit ? `${unit} (unidad del producto)` : unit
+  }));
+  if (component.portions_per_unit) {
+    const name = component.portion_name || "porción";
+    options.push({
+      value: "portion",
+      label: `${name} (1 ${component.unit} rinde ${component.portions_per_unit})`
+    });
+  }
+  return options;
+}
+
+/** Convierte lo que escribió el usuario a la unidad en la que se lleva el stock. */
+export function toComponentQuantity(
+  value: number,
+  fromUnit: string,
+  component: Product
+): { quantity: number; measure: "unit" | "portion" } {
+  if (fromUnit === "portion") return { quantity: value, measure: "portion" };
+  if (fromUnit === component.unit) return { quantity: value, measure: "unit" };
+  const from = TO_BASE[fromUnit];
+  const to = TO_BASE[component.unit];
+  if (!from || !to) return { quantity: value, measure: "unit" };
+  return { quantity: Math.round(((value * from) / to) * 1000) / 1000, measure: "unit" };
+}
+
+/** Texto legible de un componente: «1 vaso de Fernet», «0,75 litro de Cerveza». */
+export function describeComponent(c: ProductComponent, formatQty: (n: number) => string): string {
+  if (c.measure === "portion") {
+    return `${formatQty(c.quantity)} ${c.portion_name || "porción"} de ${c.name}`;
+  }
+  return `${formatQty(c.quantity)} ${c.unit} de ${c.name}`;
 }
 
 export async function listProducts(
@@ -138,17 +224,23 @@ export async function listProducts(
 
   const all = (data ?? []).map((row) => mapProduct(row as Record<string, unknown>));
 
-  let links: { product_id: string; component_id: string; quantity: number }[] = [];
+  let links: {
+    product_id: string;
+    component_id: string;
+    quantity: number;
+    measure?: "unit" | "portion";
+  }[] = [];
   if (all.some((p) => p.is_composite)) {
     const { data: linkRows, error: linkError } = await supabase
       .from("product_components")
-      .select("product_id,component_id,quantity")
+      .select("product_id,component_id,quantity,measure")
       .eq("company_id", companyId);
     if (linkError) throw linkError;
     links = (linkRows ?? []).map((row) => ({
       product_id: String(row.product_id),
       component_id: String(row.component_id),
-      quantity: num(row.quantity)
+      quantity: num(row.quantity),
+      measure: row.measure === "portion" ? "portion" : "unit"
     }));
   }
 
@@ -161,7 +253,7 @@ export async function setProductComponents(
   supabase: SupabaseClient,
   companyId: string,
   productId: string,
-  components: { component_id: string; quantity: number }[]
+  components: { component_id: string; quantity: number; measure?: "unit" | "portion" }[]
 ): Promise<void> {
   const { error } = await supabase.rpc("set_product_components", {
     p_company_id: companyId,
@@ -188,7 +280,9 @@ export async function createProduct(
       cost: input.cost,
       min_stock: input.min_stock,
       track_stock: input.track_stock,
-      is_for_sale: input.is_for_sale
+      is_for_sale: input.is_for_sale,
+      portions_per_unit: input.portions_per_unit || null,
+      portion_name: input.portion_name?.trim() || null
     })
     .select("id")
     .single();
@@ -219,7 +313,9 @@ export async function updateProduct(
       cost: input.cost,
       min_stock: input.min_stock,
       track_stock: input.track_stock,
-      is_for_sale: input.is_for_sale
+      is_for_sale: input.is_for_sale,
+      portions_per_unit: input.portions_per_unit || null,
+      portion_name: input.portion_name?.trim() || null
     })
     .eq("id", productId)
     .eq("company_id", companyId);
@@ -308,6 +404,9 @@ export function demoProduct(
     is_active: true,
     is_for_sale: true,
     is_composite: false,
+    portions_per_unit: null,
+    portion_name: null,
+    portions_used: 0,
     components: [],
     available: null,
     updated_at: new Date().toISOString(),

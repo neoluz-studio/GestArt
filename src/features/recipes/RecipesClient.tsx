@@ -1,5 +1,6 @@
 "use client";
 
+import { NumberInput } from "@/components/NumberInput";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CompactMetric } from "@/components/Metric";
 import { Icon } from "@/components/Icon";
@@ -388,7 +389,7 @@ export function RecipesClient() {
               </label>
               <label className="form-field">
                 <span>Cantidad que rinde</span>
-                <input inputMode="decimal" value={draft.final_quantity} onChange={(e) => setDraft({ ...draft, final_quantity: e.target.value })} />
+                <NumberInput decimals={3} value={draft.final_quantity} onValueChange={(raw) => setDraft({ ...draft, final_quantity: raw })} />
               </label>
               <label className="form-field">
                 <span>Unidad</span>
@@ -398,7 +399,7 @@ export function RecipesClient() {
               </label>
               <label className="form-field">
                 <span>Precio de venta (por unidad)</span>
-                <input inputMode="decimal" value={draft.sale_price} onChange={(e) => setDraft({ ...draft, sale_price: e.target.value })} />
+                <NumberInput value={draft.sale_price} onValueChange={(raw) => setDraft({ ...draft, sale_price: raw })} />
               </label>
             </div>
 
@@ -429,10 +430,10 @@ export function RecipesClient() {
                     return (
                       <tr key={i.key}>
                         <td><input value={i.name} onChange={(e) => updateIngredient(i.key, { name: e.target.value })} placeholder="Harina, tinta, tela..." /></td>
-                        <td><input inputMode="decimal" value={i.purchase_price} onChange={(e) => updateIngredient(i.key, { purchase_price: e.target.value })} /></td>
+                        <td><NumberInput value={i.purchase_price} onValueChange={(raw) => updateIngredient(i.key, { purchase_price: raw })} /></td>
                         <td>
                           <div className="pos-pair">
-                            <input inputMode="decimal" value={i.purchase_quantity} onChange={(e) => updateIngredient(i.key, { purchase_quantity: e.target.value })} />
+                            <NumberInput decimals={3} value={i.purchase_quantity} onValueChange={(raw) => updateIngredient(i.key, { purchase_quantity: raw })} />
                             <select value={i.purchase_unit} onChange={(e) => updateIngredient(i.key, { purchase_unit: e.target.value as RecipeUnit })}>
                               {RECIPE_UNITS.map((u) => <option value={u} key={u}>{u}</option>)}
                             </select>
@@ -440,7 +441,7 @@ export function RecipesClient() {
                         </td>
                         <td>
                           <div className="pos-pair">
-                            <input inputMode="decimal" value={i.used_quantity} onChange={(e) => updateIngredient(i.key, { used_quantity: e.target.value })} />
+                            <NumberInput decimals={3} value={i.used_quantity} onValueChange={(raw) => updateIngredient(i.key, { used_quantity: raw })} />
                             <select value={i.used_unit} onChange={(e) => updateIngredient(i.key, { used_unit: e.target.value as RecipeUnit })}>
                               {RECIPE_UNITS.map((u) => <option value={u} key={u}>{u}</option>)}
                             </select>

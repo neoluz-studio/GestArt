@@ -1,10 +1,12 @@
 "use client";
 
+import { NumberInput } from "@/components/NumberInput";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CompactMetric } from "@/components/Metric";
 import { Icon } from "@/components/Icon";
 import { ModuleGate } from "@/components/ModuleGate";
 import { Topbar } from "@/components/Topbar";
+import { SaleTicketModal } from "@/features/sales/SaleTicketModal";
 import { useTenant } from "@/contexts/TenantContext";
 import { demoMode } from "@/lib/runtime";
 import {
@@ -22,6 +24,7 @@ import {
   cancelSale,
   cartDiscountAmount,
   createSale,
+  getSale,
   lineAmounts,
   listSales,
   type DiscountType,
@@ -72,6 +75,8 @@ export function SalesClient() {
   const [methodId, setMethodId] = useState("");
   const [notes, setNotes] = useState("");
   const [charging, setCharging] = useState(false);
+  const [received, setReceived] = useState("");
+  const [ticket, setTicket] = useState<{ sale: SaleRecord; received: number | null } | null>(null);
 
   // Historial
   const today = toLocalISODate();
@@ -200,36 +205,52 @@ export function SalesClient() {
     if (cart.length === 0) return setError("Agregá al menos un producto.");
     if (!methodId) return setError("Elegí el método de pago.");
 
+    const isCash = methods.find((m) => m.id === methodId)?.code === "cash";
+    const receivedAmount = isCash && received.trim() ? parseNumber(received) : null;
+    if (receivedAmount !== null && receivedAmount < totals.total) {
+      return setError("El monto recibido es menor al total de la venta.");
+    }
+
     if (demoMode) {
       const number = sales.length + 1;
-      setSales((rows) => [
-        {
-          id: `demo-${Date.now()}`,
-          sale_number: number,
-          sold_at: new Date().toISOString(),
-          status: "completed",
-          payment_method_name: methods.find((m) => m.id === methodId)?.name ?? null,
-          subtotal: totals.subtotal,
-          discount_total: totals.itemDiscount + totals.cartDiscount,
-          total: totals.total,
-          cost_total: totals.total - totals.profit,
-          profit: totals.profit,
-          notes: notes || null,
-          cancel_reason: null,
-          items: cart.map((l, i) => ({
-            id: `${i}`,
-            name: l.product.name,
-            quantity: l.quantity,
-            unit_price: l.product.sale_price,
-            discount: 0,
-            total: l.product.sale_price * l.quantity
-          }))
-        },
-        ...rows
-      ]);
+      const demoSale: SaleRecord = {
+        id: `demo-${Date.now()}`,
+        sale_number: number,
+        sold_at: new Date().toISOString(),
+        status: "completed",
+        payment_method_name: methods.find((m) => m.id === methodId)?.name ?? null,
+        subtotal: totals.subtotal,
+        discount_total: totals.itemDiscount + totals.cartDiscount,
+        total: totals.total,
+        cost_total: totals.total - totals.profit,
+        profit: totals.profit,
+        notes: notes || null,
+        cancel_reason: null,
+        items: cart.map((l, i) => ({
+          id: `${i}`,
+          name: l.product.name,
+          quantity: l.quantity,
+          unit_price: l.product.sale_price,
+          discount: lineAmounts(
+            l.product.sale_price,
+            l.quantity,
+            l.discountType,
+            parseNumber(l.discountValue)
+          ).discount,
+          total: lineAmounts(
+            l.product.sale_price,
+            l.quantity,
+            l.discountType,
+            parseNumber(l.discountValue)
+          ).total
+        }))
+      };
+      setSales((rows) => [demoSale, ...rows]);
+      setTicket({ sale: demoSale, received: receivedAmount });
       setCart([]);
       setCartDiscValue("");
       setNotes("");
+      setReceived("");
       setSuccess(`Modo demo: venta #${number} simulada (no se guarda).`);
       return;
     }
@@ -237,7 +258,7 @@ export function SalesClient() {
     if (!supabaseBrowser || !currentCompany) return;
     setCharging(true);
     try {
-      await createSale(supabaseBrowser, currentCompany.id, {
+      const saleId = await createSale(supabaseBrowser, currentCompany.id, {
         items: cart.map((l) => ({
           product_id: l.product.id,
           quantity: l.quantity,
@@ -253,6 +274,15 @@ export function SalesClient() {
       setCart([]);
       setCartDiscValue("");
       setNotes("");
+      setReceived("");
+      try {
+        setTicket({
+          sale: await getSale(supabaseBrowser, currentCompany.id, saleId),
+          received: receivedAmount
+        });
+      } catch {
+        // la venta ya quedó registrada; el ticket se puede imprimir desde el Historial
+      }
       await loadCatalog(); // refresca stock
     } catch (err) {
       setError(errorMessage(err));
@@ -427,13 +457,7 @@ export function SalesClient() {
                             <button type="button" onClick={() => setQuantity(line.product.id, line.quantity + 1)}>+</button>
                           </div>
                           <div className="pos-disc">
-                            <input
-                              inputMode="decimal"
-                              placeholder="Desc."
-                              value={line.discountValue}
-                              onChange={(e) => updateLine(line.product.id, { discountValue: e.target.value })}
-                              aria-label="Descuento del producto"
-                            />
+                            <NumberInput placeholder="Desc." value={line.discountValue} onValueChange={(raw) => updateLine(line.product.id, { discountValue: raw })} aria-label="Descuento del producto" />
                             <select
                               value={line.discountType}
                               onChange={(e) => updateLine(line.product.id, { discountType: e.target.value as DiscountType })}
@@ -454,13 +478,7 @@ export function SalesClient() {
               <div className="pos-summary">
                 <div className="pos-disc pos-cart-disc">
                   <span>Descuento general</span>
-                  <input
-                    inputMode="decimal"
-                    placeholder="0"
-                    value={cartDiscValue}
-                    onChange={(e) => setCartDiscValue(e.target.value)}
-                    aria-label="Descuento general"
-                  />
+                  <NumberInput placeholder="0" value={cartDiscValue} onValueChange={(raw) => setCartDiscValue(raw)} aria-label="Descuento general" />
                   <select value={cartDiscType} onChange={(e) => setCartDiscType(e.target.value as DiscountType)} aria-label="Tipo de descuento general">
                     <option value="percent">%</option>
                     <option value="amount">$</option>
@@ -477,6 +495,20 @@ export function SalesClient() {
                     {methods.map((m) => <option value={m.id} key={m.id}>{m.name}</option>)}
                   </select>
                 </label>
+                {methods.find((m) => m.id === methodId)?.code === "cash" && (
+                  <>
+                    <label className="form-field">
+                      <span>Recibió (efectivo, opcional)</span>
+                      <NumberInput value={received} onValueChange={(raw) => setReceived(raw)} placeholder="Para calcular el vuelto" />
+                    </label>
+                    {parseNumber(received) >= totals.total && totals.total > 0 && received.trim() !== "" && (
+                      <div className="pos-sum-row">
+                        <span>Vuelto</span>
+                        <strong className="pos-change">{money(parseNumber(received) - totals.total)}</strong>
+                      </div>
+                    )}
+                  </>
+                )}
                 <label className="form-field">
                   <span>Nota (opcional)</span>
                   <input value={notes} onChange={(e) => setNotes(e.target.value)} />
@@ -619,6 +651,13 @@ export function SalesClient() {
 
               <div className="modal-actions">
                 <button type="button" className="button modal-secondary" onClick={() => setSelected(null)}>Cerrar</button>
+                <button
+                  type="button"
+                  className="button modal-secondary"
+                  onClick={() => setTicket({ sale: selected, received: null })}
+                >
+                  Ver / imprimir ticket
+                </button>
                 {selected.status === "completed" && (
                   <button type="button" className="button button-dark" onClick={() => void doCancel()}>
                     Anular venta
@@ -627,6 +666,13 @@ export function SalesClient() {
               </div>
             </div>
           </div>
+        )}
+        {ticket && (
+          <SaleTicketModal
+            sale={ticket.sale}
+            received={ticket.received}
+            onClose={() => setTicket(null)}
+          />
         )}
       </div>
     </ModuleGate>

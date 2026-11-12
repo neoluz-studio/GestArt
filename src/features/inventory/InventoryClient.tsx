@@ -1,5 +1,6 @@
 "use client";
 
+import { NumberInput } from "@/components/NumberInput";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CompactMetric } from "@/components/Metric";
 import { Icon } from "@/components/Icon";
@@ -629,11 +630,11 @@ export function InventoryClient() {
                 </label>
                 <label className="form-field">
                   <span>Stock mínimo</span>
-                  <input type="number" min="0" step="0.001" value={materialForm.minimum_stock} onChange={(e) => setMaterialForm({ ...materialForm, minimum_stock: Number(e.target.value) })} />
+                  <NumberInput decimals={3} value={materialForm.minimum_stock} onValueChange={(_, n) => setMaterialForm({ ...materialForm, minimum_stock: n })} />
                 </label>
                 <label className="form-field">
                   <span>Costo unitario</span>
-                  <input type="number" min="0" step="0.01" value={materialForm.unit_cost} onChange={(e) => setMaterialForm({ ...materialForm, unit_cost: Number(e.target.value) })} />
+                  <NumberInput value={materialForm.unit_cost} onValueChange={(_, n) => setMaterialForm({ ...materialForm, unit_cost: n })} />
                 </label>
                 <label className="form-field">
                   <span>Proveedor</span>
@@ -815,12 +816,7 @@ export function InventoryClient() {
 
                 <label className="form-field">
                   <span>Cantidad *</span>
-                  <input
-                    type="number"
-                    step="0.001"
-                    value={movementForm.quantity}
-                    onChange={(e) => setMovementForm({ ...movementForm, quantity: Number(e.target.value) })}
-                  />
+                  <NumberInput decimals={3} allowNegative value={movementForm.quantity} onValueChange={(_, n) => setMovementForm({ ...movementForm, quantity: n })} />
                   {movementForm.movement_type === "adjustment" && <small>En ajuste podés usar cantidad positiva o negativa.</small>}
                 </label>
 
@@ -833,7 +829,7 @@ export function InventoryClient() {
                   <>
                     <label className="form-field">
                       <span>Costo unitario</span>
-                      <input type="number" min="0" step="0.01" value={movementForm.unit_cost ?? ""} onChange={(e) => setMovementForm({ ...movementForm, unit_cost: e.target.value === "" ? null : Number(e.target.value) })} />
+                      <NumberInput value={movementForm.unit_cost ?? ""} onValueChange={(raw, n) => setMovementForm({ ...movementForm, unit_cost: raw === "" ? null : n })} />
                     </label>
                     <label className="form-field">
                       <span>Proveedor</span>

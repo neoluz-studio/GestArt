@@ -1,5 +1,6 @@
 "use client";
 
+import { NumberInput } from "@/components/NumberInput";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CompactMetric } from "@/components/Metric";
 import { Icon } from "@/components/Icon";
@@ -1102,13 +1103,7 @@ if (client && currentCompany && supabaseBrowser) {
 
                 <label className="form-field">
                   <span>Monto *</span>
-                  <input
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    value={movementForm.amount || ""}
-                    onChange={(event) => setMovementForm({ ...movementForm, amount:Number(event.target.value) })}
-                  />
+                  <NumberInput value={movementForm.amount || ""} onValueChange={(_, amount) => setMovementForm({ ...movementForm, amount })} />
                 </label>
 
                 <label className="form-field">
@@ -1195,7 +1190,7 @@ if (client && currentCompany && supabaseBrowser) {
 
               <label className="form-field cash-actual-field">
                 <span>Saldo real *</span>
-                <input type="number" step="0.01" value={actualBalance} onChange={(event) => setActualBalance(Number(event.target.value))} />
+                <NumberInput allowNegative value={actualBalance} onValueChange={(_, amount) => setActualBalance(amount)} />
               </label>
 
               <div className={`cash-difference ${closureDifference === 0 ? "balanced" : closureDifference < 0 ? "negative" : "positive"}`}>

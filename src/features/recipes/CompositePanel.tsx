@@ -1,5 +1,6 @@
 "use client";
 
+import { NumberInput } from "@/components/NumberInput";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CompactMetric } from "@/components/Metric";
 import { Icon } from "@/components/Icon";
@@ -10,13 +11,16 @@ import { supabaseBrowser } from "@/lib/supabase/browser";
 import {
   createProduct,
   demoProduct,
+  describeComponent,
   listProducts,
   resolveComposition,
   setProductComponents,
+  toComponentQuantity,
+  unitOptions,
   type Product
 } from "@/services/products";
 
-type DraftComponent = { key: string; component_id: string; quantity: string };
+type DraftComponent = { key: string; component_id: string; quantity: string; unit: string };
 
 type Draft = {
   mode: "new" | "existing";
@@ -41,7 +45,7 @@ function emptyDraft(): Draft {
     price: "",
     category: "",
     unit: "unidad",
-    components: [{ key: newKey(), component_id: "", quantity: "" }],
+    components: [{ key: newKey(), component_id: "", quantity: "", unit: "" }],
     editing: false
   };
 }
@@ -49,16 +53,19 @@ function emptyDraft(): Draft {
 // ---- Demo: un mini bar ----
 function demoCatalog(): Product[] {
   const base = [
-    demoProduct({ id: "b1", name: "Cerveza barril", unit: "litro", cost: 2500, stock: 50, is_for_sale: false }),
-    demoProduct({ id: "b2", name: "Fernet (botella)", unit: "unidad", cost: 12000, stock: 10, is_for_sale: false }),
-    demoProduct({ id: "b3", name: "Gaseosa", unit: "unidad", cost: 800, stock: 20, is_for_sale: false }),
-    demoProduct({ id: "b4", name: "Vaso de cerveza", unit: "vaso", sale_price: 3000, track_stock: false, is_composite: true }),
-    demoProduct({ id: "b5", name: "Fernet con 5 gaseosas", unit: "unidad", sale_price: 30000, track_stock: false, is_composite: true })
+    demoProduct({ id: "b1", name: "Cerveza tirada", unit: "litro", cost: 2000, stock: 100, is_for_sale: false }),
+    demoProduct({ id: "b2", name: "Fernet (botella)", unit: "unidad", cost: 12000, stock: 30, is_for_sale: false, portions_per_unit: 5, portion_name: "vaso" }),
+    demoProduct({ id: "b3", name: "Gaseosa 500 ml", unit: "unidad", cost: 800, stock: 30, is_for_sale: false }),
+    demoProduct({ id: "b4", name: "Vaso de cerveza 750", unit: "vaso", sale_price: 3500, track_stock: false, is_composite: true }),
+    demoProduct({ id: "b5", name: "Vaso de Fernet", unit: "vaso", sale_price: 5000, track_stock: false, is_composite: true }),
+    demoProduct({ id: "b6", name: "Promo Fernet + gaseosa grande", unit: "unidad", sale_price: 30000, track_stock: false, is_composite: true })
   ];
   return resolveComposition(base, [
-    { product_id: "b4", component_id: "b1", quantity: 0.4 },
-    { product_id: "b5", component_id: "b2", quantity: 1 },
-    { product_id: "b5", component_id: "b3", quantity: 5 }
+    { product_id: "b4", component_id: "b1", quantity: 0.75, measure: "unit" },
+    { product_id: "b5", component_id: "b2", quantity: 1, measure: "portion" },
+    { product_id: "b5", component_id: "b3", quantity: 1, measure: "unit" },
+    { product_id: "b6", component_id: "b2", quantity: 1, measure: "unit" },
+    { product_id: "b6", component_id: "b3", quantity: 1, measure: "unit" }
   ]);
 }
 
@@ -120,7 +127,12 @@ export function CompositePanel() {
     let cost = 0;
     for (const line of draft.components) {
       const comp = byId.get(line.component_id);
-      if (comp) cost += comp.cost * parseNumber(line.quantity);
+      if (!comp) continue;
+      const conv = toComponentQuantity(parseNumber(line.quantity), line.unit || comp.unit, comp);
+      cost +=
+        conv.measure === "portion" && comp.portions_per_unit
+          ? (comp.cost / comp.portions_per_unit) * conv.quantity
+          : comp.cost * conv.quantity;
     }
     const existing = draft.mode === "existing" ? byId.get(draft.productId) : undefined;
     const price = draft.mode === "existing" ? existing?.sale_price ?? 0 : parseNumber(draft.price);
@@ -145,7 +157,8 @@ export function CompositePanel() {
       components: product.components.map((c) => ({
         key: newKey(),
         component_id: c.component_id,
-        quantity: String(c.quantity)
+        quantity: String(c.quantity),
+        unit: c.measure === "portion" ? "portion" : c.unit
       }))
     });
     setError("");
@@ -163,12 +176,20 @@ export function CompositePanel() {
     setError("");
     setSuccess("");
 
+    const byId = new Map(products.map((p) => [p.id, p]));
     const lines = draft.components
       .filter((c) => c.component_id)
-      .map((c) => ({
-        component_id: c.component_id,
-        quantity: Math.round(parseNumber(c.quantity) * 1000) / 1000
-      }));
+      .map((c) => {
+        const comp = byId.get(c.component_id);
+        const conv = comp
+          ? toComponentQuantity(parseNumber(c.quantity), c.unit || comp.unit, comp)
+          : { quantity: parseNumber(c.quantity), measure: "unit" as const };
+        return {
+          component_id: c.component_id,
+          quantity: Math.round(conv.quantity * 1000) / 1000,
+          measure: conv.measure
+        };
+      });
 
     if (draft.mode === "new") {
       if (!draft.name.trim()) return setError("Ingresá el nombre del producto (por ejemplo: Vaso de cerveza).");
@@ -206,9 +227,19 @@ export function CompositePanel() {
           ...base
             .filter((p) => p.is_composite && p.id !== id)
             .flatMap((p) =>
-              p.components.map((c) => ({ product_id: p.id, component_id: c.component_id, quantity: c.quantity }))
+              p.components.map((c) => ({
+                product_id: p.id,
+                component_id: c.component_id,
+                quantity: c.quantity,
+                measure: c.measure
+              }))
             ),
-          ...lines.map((l) => ({ product_id: id, component_id: l.component_id, quantity: l.quantity }))
+          ...lines.map((l) => ({
+            product_id: id,
+            component_id: l.component_id,
+            quantity: l.quantity,
+            measure: l.measure
+          }))
         ];
         return resolveComposition(base, links);
       });
@@ -275,9 +306,10 @@ export function CompositePanel() {
             Vendés uno, <span>y se descuentan sus componentes.</span>
           </h2>
           <p>
-            Armá un producto con lo que lleva: un vaso de cerveza descuenta 0,4 litros del barril; una
-            botella con gaseosas descuenta la botella y las cinco gaseosas. El costo y la ganancia se
-            calculan solos. Los insumos se cargan primero en Productos (tildando que no se venden).
+            Armá un producto con lo que lleva: un vaso de cerveza descuenta 0,75 litros del barril; un vaso de
+            Fernet descuenta una gaseosa y una porción de la botella (cada 5 vasos se descuenta una botella entera);
+            una promo descuenta la botella y la gaseosa enteras. El costo y la ganancia se calculan solos. Los
+            insumos se cargan primero en Productos (tildando que no se venden).
           </p>
         </div>
         <div className="module-actions">
@@ -335,7 +367,7 @@ export function CompositePanel() {
                         <td><strong>{p.name}</strong></td>
                         <td>
                           <small className="pos-sub">
-                            {p.components.map((c) => `${qty(c.quantity)} ${c.unit} de ${c.name}`).join(" + ")}
+                            {p.components.map((c) => describeComponent(c, qty)).join(" + ")}
                           </small>
                         </td>
                         <td className="money">{money(p.cost)}</td>
@@ -401,7 +433,7 @@ export function CompositePanel() {
               </label>
               <label className="form-field">
                 <span>Precio de venta</span>
-                <input inputMode="decimal" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })} />
+                <NumberInput value={draft.price} onValueChange={(raw) => setDraft({ ...draft, price: raw })} />
               </label>
               <label className="form-field">
                 <span>Unidad</span>
@@ -444,10 +476,26 @@ export function CompositePanel() {
               <tbody>
                 {draft.components.map((line) => {
                   const comp = products.find((p) => p.id === line.component_id);
+                  const options = comp ? unitOptions(comp) : [];
+                  const unit = line.unit || comp?.unit || "";
+                  const conv = comp
+                    ? toComponentQuantity(parseNumber(line.quantity), unit, comp)
+                    : null;
+                  const lineCost = comp && conv
+                    ? conv.measure === "portion" && comp.portions_per_unit
+                      ? (comp.cost / comp.portions_per_unit) * conv.quantity
+                      : comp.cost * conv.quantity
+                    : 0;
                   return (
                     <tr key={line.key}>
                       <td>
-                        <select value={line.component_id} onChange={(e) => updateLine(line.key, { component_id: e.target.value })}>
+                        <select
+                          value={line.component_id}
+                          onChange={(e) => {
+                            const next = products.find((p) => p.id === e.target.value);
+                            updateLine(line.key, { component_id: e.target.value, unit: next?.unit ?? "" });
+                          }}
+                        >
                           <option value="">Elegí un producto...</option>
                           {componentOptions.map((p) => (
                             <option value={p.id} key={p.id}>
@@ -458,11 +506,16 @@ export function CompositePanel() {
                       </td>
                       <td>
                         <div className="pos-pair">
-                          <input inputMode="decimal" value={line.quantity} onChange={(e) => updateLine(line.key, { quantity: e.target.value })} placeholder="0,4" />
-                          <span className="pos-sub" style={{ alignSelf: "center" }}>{comp?.unit ?? "—"}</span>
+                          <NumberInput decimals={3} value={line.quantity} onValueChange={(raw) => updateLine(line.key, { quantity: raw })} placeholder="0,75" />
+                          <select value={unit} disabled={!comp} onChange={(e) => updateLine(line.key, { unit: e.target.value })}>
+                            {options.map((o) => <option value={o.value} key={o.value}>{o.label}</option>)}
+                          </select>
                         </div>
+                        {comp && conv && conv.measure === "unit" && unit !== comp.unit && parseNumber(line.quantity) > 0 && (
+                          <small className="pos-sub">Se descuentan {qty(conv.quantity)} {comp.unit} del stock</small>
+                        )}
                       </td>
-                      <td className="money"><strong>{money((comp?.cost ?? 0) * parseNumber(line.quantity))}</strong></td>
+                      <td className="money"><strong>{money(lineCost)}</strong></td>
                       <td>
                         <button
                           type="button"
@@ -480,14 +533,16 @@ export function CompositePanel() {
             </table>
           </div>
           <p className="muted-small">
-            La cantidad va en la unidad del componente (si el barril está en litros, un vaso de 400 cc es 0,4).
-            Se admiten hasta 3 decimales.
+            Elegí la unidad en la que medís cada componente: si la cerveza tirada se lleva en litros, un vaso de
+            750 ml se carga como 750 ml y el sistema descuenta 0,75 litros. Si el producto rinde porciones
+            (por ejemplo 1 botella de Fernet = 5 vasos), elegí «vaso»: la botella se descuenta entera recién
+            cuando se sirve el último vaso.
           </p>
 
           <button
             type="button"
             className="button modal-secondary"
-            onClick={() => setDraft({ ...draft, components: [...draft.components, { key: newKey(), component_id: "", quantity: "" }] })}
+            onClick={() => setDraft({ ...draft, components: [...draft.components, { key: newKey(), component_id: "", quantity: "", unit: "" }] })}
           >
             <Icon name="plus" size={14} /> Agregar componente
           </button>

@@ -101,6 +101,54 @@ export async function cancelSale(
   if (error) throw error;
 }
 
+const SALE_SELECT =
+  "id,sale_number,sold_at,status,subtotal,discount_total,total,cost_total,profit,notes,cancel_reason,payment_methods(name),sale_items(id,name,quantity,unit_price,discount,total)";
+
+function mapSale(row: unknown): SaleRecord {
+  const r = row as Record<string, unknown> & {
+    payment_methods: { name: string } | null;
+    sale_items: Record<string, unknown>[] | null;
+  };
+  return {
+    id: String(r.id),
+    sale_number: num(r.sale_number),
+    sold_at: String(r.sold_at),
+    status: r.status as SaleRecord["status"],
+    payment_method_name: r.payment_methods?.name ?? null,
+    subtotal: num(r.subtotal),
+    discount_total: num(r.discount_total),
+    total: num(r.total),
+    cost_total: num(r.cost_total),
+    profit: num(r.profit),
+    notes: (r.notes as string | null) ?? null,
+    cancel_reason: (r.cancel_reason as string | null) ?? null,
+    items: (r.sale_items ?? []).map((item) => ({
+      id: String(item.id),
+      name: String(item.name),
+      quantity: num(item.quantity),
+      unit_price: num(item.unit_price),
+      discount: num(item.discount),
+      total: num(item.total)
+    }))
+  };
+}
+
+/** Trae una venta con su detalle (para el ticket). */
+export async function getSale(
+  supabase: SupabaseClient,
+  companyId: string,
+  saleId: string
+): Promise<SaleRecord> {
+  const { data, error } = await supabase
+    .from("sales")
+    .select(SALE_SELECT)
+    .eq("company_id", companyId)
+    .eq("id", saleId)
+    .single();
+  if (error) throw error;
+  return mapSale(data);
+}
+
 /**
  * Lista ventas entre dos fechas (YYYY-MM-DD, inclusive).
  * Los límites se interpretan en la zona horaria del navegador.
@@ -116,9 +164,7 @@ export async function listSales(
 
   const { data, error } = await supabase
     .from("sales")
-    .select(
-      "id,sale_number,sold_at,status,subtotal,discount_total,total,cost_total,profit,notes,cancel_reason,payment_methods(name),sale_items(id,name,quantity,unit_price,discount,total)"
-    )
+    .select(SALE_SELECT)
     .eq("company_id", companyId)
     .gte("sold_at", start.toISOString())
     .lt("sold_at", end.toISOString())
@@ -126,33 +172,5 @@ export async function listSales(
     .limit(1000);
 
   if (error) throw error;
-
-  return (data ?? []).map((row) => {
-    const r = row as unknown as Record<string, unknown> & {
-      payment_methods: { name: string } | null;
-      sale_items: Record<string, unknown>[] | null;
-    };
-    return {
-      id: String(r.id),
-      sale_number: num(r.sale_number),
-      sold_at: String(r.sold_at),
-      status: r.status as SaleRecord["status"],
-      payment_method_name: r.payment_methods?.name ?? null,
-      subtotal: num(r.subtotal),
-      discount_total: num(r.discount_total),
-      total: num(r.total),
-      cost_total: num(r.cost_total),
-      profit: num(r.profit),
-      notes: (r.notes as string | null) ?? null,
-      cancel_reason: (r.cancel_reason as string | null) ?? null,
-      items: (r.sale_items ?? []).map((item) => ({
-        id: String(item.id),
-        name: String(item.name),
-        quantity: num(item.quantity),
-        unit_price: num(item.unit_price),
-        discount: num(item.discount),
-        total: num(item.total)
-      }))
-    };
-  });
+  return (data ?? []).map(mapSale);
 }

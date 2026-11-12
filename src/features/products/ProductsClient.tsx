@@ -1,5 +1,6 @@
 "use client";
 
+import { NumberInput } from "@/components/NumberInput";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { CompactMetric } from "@/components/Metric";
 import { Icon } from "@/components/Icon";
@@ -19,6 +20,7 @@ import {
   adjustProductStock,
   createProduct,
   demoProduct,
+  describeComponent,
   listProductMovements,
   listProducts,
   setProductActive,
@@ -47,6 +49,8 @@ type FormState = {
   initial_stock: string;
   track_stock: boolean;
   is_for_sale: boolean;
+  portions_per_unit: string;
+  portion_name: string;
 };
 
 const EMPTY_FORM: FormState = {
@@ -59,7 +63,9 @@ const EMPTY_FORM: FormState = {
   min_stock: "0",
   initial_stock: "0",
   track_stock: true,
-  is_for_sale: true
+  is_for_sale: true,
+  portions_per_unit: "",
+  portion_name: ""
 };
 
 function stockState(product: Product): "none" | "empty" | "low" | "ok" {
@@ -178,7 +184,9 @@ export function ProductsClient() {
       min_stock: String(product.min_stock),
       initial_stock: "0",
       track_stock: product.track_stock,
-      is_for_sale: product.is_for_sale
+      is_for_sale: product.is_for_sale,
+      portions_per_unit: product.portions_per_unit ? String(product.portions_per_unit) : "",
+      portion_name: product.portion_name ?? ""
     });
     setError("");
     setFormOpen(true);
@@ -202,6 +210,11 @@ export function ProductsClient() {
       return setError("Los valores no pueden ser negativos.");
     }
 
+    const portions = form.portions_per_unit.trim() ? parseNumber(form.portions_per_unit) : null;
+    if (portions !== null && portions <= 0) {
+      return setError("Las porciones por unidad deben ser mayores a cero (o dejalo vacío).");
+    }
+
     const input: ProductInput = {
       code: form.code,
       name: form.name,
@@ -212,6 +225,8 @@ export function ProductsClient() {
       min_stock: minStock,
       track_stock: form.track_stock,
       is_for_sale: form.is_for_sale,
+      portions_per_unit: form.track_stock ? portions : null,
+      portion_name: form.portion_name,
       initial_stock: initialStock
     };
 
@@ -241,6 +256,9 @@ export function ProductsClient() {
             is_active: true,
             is_for_sale: form.is_for_sale,
             is_composite: false,
+            portions_per_unit: form.track_stock ? portions : null,
+            portion_name: form.portion_name.trim() || null,
+            portions_used: 0,
             components: [],
             available: null,
             updated_at: now
@@ -448,7 +466,10 @@ export function ProductsClient() {
                             {p.code || "Sin código"} · {p.unit}
                             {!p.is_for_sale ? " · Insumo (no se vende)" : ""}
                             {p.is_composite
-                              ? ` · Lleva: ${p.components.map((c) => `${qty(c.quantity)} ${c.unit} ${c.name}`).join(", ")}`
+                              ? ` · Lleva: ${p.components.map((c) => describeComponent(c, qty)).join(" + ")}`
+                              : ""}
+                            {p.portions_per_unit
+                              ? ` · Rinde ${qty(p.portions_per_unit)} ${p.portion_name || "porciones"} por ${p.unit} (en uso: ${qty(p.portions_used)} de ${qty(p.portions_per_unit)})`
                               : ""}
                           </small>
                         </td>
@@ -547,16 +568,11 @@ export function ProductsClient() {
                 </label>
                 <label className="form-field">
                   <span>Precio de venta</span>
-                  <input inputMode="decimal" value={form.sale_price} onChange={(e) => setForm({ ...form, sale_price: e.target.value })} />
+                  <NumberInput value={form.sale_price} onValueChange={(raw) => setForm({ ...form, sale_price: raw })} />
                 </label>
                 <label className="form-field">
                   <span>{editing?.is_composite ? "Costo (se calcula con sus componentes)" : "Costo"}</span>
-                  <input
-                    inputMode="decimal"
-                    value={editing?.is_composite ? String(editing.cost) : form.cost}
-                    disabled={Boolean(editing?.is_composite)}
-                    onChange={(e) => setForm({ ...form, cost: e.target.value })}
-                  />
+                  <NumberInput value={editing?.is_composite ? String(editing.cost) : form.cost} disabled={Boolean(editing?.is_composite)} onValueChange={(raw) => setForm({ ...form, cost: raw })} />
                 </label>
                 <label className="form-field">
                   <span>Unidad</span>
@@ -590,12 +606,24 @@ export function ProductsClient() {
                   <>
                     <label className="form-field">
                       <span>Stock mínimo (alerta)</span>
-                      <input inputMode="decimal" value={form.min_stock} onChange={(e) => setForm({ ...form, min_stock: e.target.value })} />
+                      <NumberInput decimals={3} value={form.min_stock} onValueChange={(raw) => setForm({ ...form, min_stock: raw })} />
+                    </label>
+                    <label className="form-field">
+                      <span>Cada {form.unit} rinde (opcional)</span>
+                      <NumberInput decimals={3} value={form.portions_per_unit} onValueChange={(raw) => setForm({ ...form, portions_per_unit: raw })} placeholder="Ej: 5 vasos por botella" />
+                    </label>
+                    <label className="form-field">
+                      <span>Nombre de la porción</span>
+                      <input
+                        value={form.portion_name}
+                        onChange={(e) => setForm({ ...form, portion_name: e.target.value })}
+                        placeholder="vaso, trago, medida..."
+                      />
                     </label>
                     {!editing && (
                       <label className="form-field">
                         <span>Stock inicial</span>
-                        <input inputMode="decimal" value={form.initial_stock} onChange={(e) => setForm({ ...form, initial_stock: e.target.value })} />
+                        <NumberInput decimals={3} value={form.initial_stock} onValueChange={(raw) => setForm({ ...form, initial_stock: raw })} />
                       </label>
                     )}
                   </>
@@ -648,7 +676,7 @@ export function ProductsClient() {
                 </label>
                 <label className="form-field">
                   <span>{stockType === "adjustment" ? "Cantidad real" : "Cantidad"}</span>
-                  <input inputMode="decimal" value={stockQty} onChange={(e) => setStockQty(e.target.value)} autoFocus />
+                  <NumberInput decimals={3} value={stockQty} onValueChange={(raw) => setStockQty(raw)} autoFocus />
                 </label>
                 <label className="form-field full-field">
                   <span>Motivo</span>
